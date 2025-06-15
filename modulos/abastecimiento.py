@@ -31,6 +31,7 @@ def mostrar_abastecimiento(usuario):
 
         productos = [row[0] for row in productos_data]
         producto_seleccionado = st.selectbox("Selecciona el producto", productos, key="nombre_producto")
+        st.session_state["producto_actual"] = producto_seleccionado
 
         # Buscar precio del producto seleccionado
         precio_unitario = next((precio for nombre, precio in productos_data if nombre == producto_seleccionado), 0)
