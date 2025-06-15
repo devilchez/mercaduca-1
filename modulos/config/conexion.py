@@ -1,9 +1,18 @@
 import mysql.connector
+from mysql.connector import Error
 
-def conectar_db():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="CFOP.D3l1a#",
-        database="mercaduca"
-    )
+def obtener_conexion():
+    try:
+        conexion = mysql.connector.connect(
+            host='budyatsrezya80loqpsv-mysql.services.clever-cloud.comv',          
+            user='ugu7boqyhnkemf1dtu_usuario',
+            password='3A57rTKfGrjUsSzuLQWd',
+            database='budyatsrezya80loqpsv',
+            port=3306               
+        )
+        if conexion.is_connected():
+            print("Conexión exitosa a la base de datos")
+            return conexion
+    except Error as e:
+        print(f"Error al conectar a la base de datos: {e}")
+        return None
