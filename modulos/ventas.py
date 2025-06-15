@@ -44,10 +44,5 @@ def mostrar_ventas():
                 st.error(f"Error al registrar la venta: {e}")
         else:
             st.error("No hay suficiente stock para esta venta.")
-
-    cursor.execute("SELECT * FROM VENTA ORDER BY Fecha_venta DESC LIMIT 5")
-    ventas = cursor.fetchall()
-    st.write("Últimas ventas registradas:")
-    st.write(ventas)
     
     con.close()
