@@ -1,5 +1,6 @@
 import streamlit as st
 from modulos.config.conexion import obtener_conexion
+from datetime import datetime
 
 def mostrar_abastecimiento(usuario):
     st.header("Registrar abastecimiento")
@@ -16,19 +17,12 @@ def mostrar_abastecimiento(usuario):
             st.warning("No hay emprendimientos registrados.")
             return
 
+        # Diccionario nombre -> id
         opciones = {nombre: emp_id for emp_id, nombre in emprendedores}
         lista_emprendedores = list(opciones.keys())
 
-        if "select_emprendedor" not in st.session_state or st.session_state["select_emprendedor"] not in lista_emprendedores:
-            st.session_state["select_emprendedor"] = lista_emprendedores[0]
-
-        index_emprendedor = lista_emprendedores.index(st.session_state["select_emprendedor"])
-        emprendedor = st.selectbox("Selecciona un emprendedor", lista_emprendedores, index=index_emprendedor, key="select_emprendedor")
-
-        if emprendedor != st.session_state.get("select_emprendedor_previo", None):
-            st.session_state["producto_actual"] = None
-            st.session_state["select_emprendedor_previo"] = emprendedor
-
+        # Select emprendedor
+        emprendedor = st.selectbox("Selecciona un emprendedor", lista_emprendedores, key="select_emprendedor")
         id_emprendimiento = opciones[emprendedor]
 
         # Obtener productos con sus ID y precio
@@ -39,51 +33,45 @@ def mostrar_abastecimiento(usuario):
             st.warning("Este emprendedor aún no tiene productos registrados.")
             return
 
-        nombres_productos = [row[1] for row in productos_data]
+        # Diccionario nombre -> (ID, precio)
+        productos_dict = {row[1]: (row[0], row[2]) for row in productos_data}
+        nombres_productos = list(productos_dict.keys())
 
-        if st.session_state.get("producto_actual") not in nombres_productos:
-            st.session_state["producto_actual"] = nombres_productos[0]
+        producto_seleccionado = st.selectbox("Selecciona el producto", nombres_productos, key="producto_seleccionado")
+        id_producto, precio_unitario = productos_dict[producto_seleccionado]
 
-        index_producto = nombres_productos.index(st.session_state["producto_actual"])
-        producto_seleccionado = st.selectbox("Selecciona el producto", nombres_productos, index=index_producto, key="producto_actual")
-
-        # Obtener ID y precio del producto seleccionado
-        producto_info = next((row for row in productos_data if row[1] == producto_seleccionado), None)
-        if not producto_info:
-            st.error("No se pudo encontrar el producto seleccionado.")
-            return
-
-        id_producto = producto_info[0]
-        precio_unitario = producto_info[2]
-
-        # Mostrar el código automáticamente
         st.markdown(f"**Código del producto:** `{id_producto}`")
         st.markdown(f"**Precio unitario:** ${precio_unitario:.2f}")
 
-        # Cantidad con botones +/-
         cantidad = st.number_input("Cantidad a ingresar", min_value=1, max_value=1000, step=1, key="cantidad_producto")
         st.markdown(f"**Precio total:** ${precio_unitario * cantidad:.2f}")
 
         if st.button("Registrar"):
-            # Insertar en ABASTECIMIENTO
-            cursor.execute("""
-                INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, ID_Producto, Cantidad, Fecha_ingreso)
-                VALUES (%s, %s, %s, NOW())
-            """, (id_emprendimiento, id_producto, cantidad))
+            try:
+                st.write("📌 Registrando abastecimiento...")
+                st.write(f"ID Emprendimiento: {id_emprendimiento}, ID Producto: {id_producto}, Cantidad: {cantidad}")
 
-            # Insertar en INVENTARIO
-            cursor.execute("""
-                INSERT INTO INVENTARIO (ID_Producto, Cantidad_ingresada, Stock, Fecha_ingreso)
-                VALUES (%s, %s, %s, NOW())
-            """, (id_producto, cantidad, cantidad))
+                # Insertar en ABASTECIMIENTO
+                cursor.execute("""
+                    INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, ID_Producto, Cantidad, Fecha_ingreso)
+                    VALUES (%s, %s, %s, NOW())
+                """, (id_emprendimiento, id_producto, cantidad))
 
-            con.commit()
-            st.success("Abastecimiento registrado exitosamente.")
+                # Insertar en INVENTARIO
+                cursor.execute("""
+                    INSERT INTO INVENTARIO (ID_Producto, Cantidad_ingresada, Stock, Fecha_ingreso)
+                    VALUES (%s, %s, %s, NOW())
+                """, (id_producto, cantidad, cantidad))
+
+                con.commit()
+                st.success("✅ Abastecimiento registrado exitosamente.")
+
+            except Exception as e:
+                st.error(f"❌ Error al registrar en base de datos: {e}")
 
     except Exception as e:
-        st.error(f"Error al registrar: {e}")
+        st.error(f"❌ Error general: {e}")
 
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
-
