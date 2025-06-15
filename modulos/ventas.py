@@ -12,7 +12,7 @@ def mostrar_ventas():
 
     producto_sel = st.selectbox("Producto", list(producto_dict.keys()))
     cantidad = st.number_input("Cantidad vendida", min_value=1)
-    tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Tarjeta"])
+    tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"])
 
     if st.button("Registrar venta"):
         id_producto = producto_dict[producto_sel]
