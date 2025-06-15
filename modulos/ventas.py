@@ -5,7 +5,6 @@ def mostrar_ventas():
     st.header("Registrar venta")
     con = obtener_conexion()
     cursor = con.cursor()
-    st.write(f"Conectado a base de datos: {con.database} en host: {con.server_host}")
     
     cursor.execute("SELECT ID_Producto, Nombre_producto FROM PRODUCTO")
     productos = cursor.fetchall()
