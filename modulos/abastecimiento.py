@@ -18,11 +18,26 @@ def mostrar_abastecimiento(usuario):
 
         # Diccionario {nombre: id}
         opciones = {nombre: emp_id for emp_id, nombre in emprendedores}
-        seleccionado = st.selectbox("Selecciona un emprendedor", list(opciones.keys()), key="emprendedor_select")
-        id_emprendimiento = opciones[seleccionado]
+        lista_emprendedores = list(opciones.keys())
+
+        # Inicializar valor por defecto en session_state para select_emprendedor
+        if "select_emprendedor" not in st.session_state or st.session_state["select_emprendedor"] not in lista_emprendedores:
+            st.session_state["select_emprendedor"] = lista_emprendedores[0]
+
+        emprendedor = st.selectbox(
+            "Selecciona un emprendedor",
+            lista_emprendedores,
+            index=lista_emprendedores.index(st.session_state["select_emprendedor"]),
+            key="select_emprendedor"
+        )
+
+        id_emprendimiento = opciones[emprendedor]
 
         # Obtener productos con su precio
-        cursor.execute("SELECT Nombre_producto, Precio FROM PRODUCTO WHERE ID_Emprendimiento = %s", (id_emprendimiento,))
+        cursor.execute(
+            "SELECT Nombre_producto, Precio FROM PRODUCTO WHERE ID_Emprendimiento = %s", 
+            (id_emprendimiento,)
+        )
         productos_data = cursor.fetchall()
 
         if not productos_data:
@@ -30,7 +45,18 @@ def mostrar_abastecimiento(usuario):
             return
 
         productos = [row[0] for row in productos_data]
-        producto_seleccionado = st.selectbox("Selecciona el producto", productos, key="nombre_producto")
+
+        # Inicializar valor por defecto en session_state para producto_actual
+        if "producto_actual" not in st.session_state or st.session_state["producto_actual"] not in productos:
+            st.session_state["producto_actual"] = productos[0]
+
+        producto_seleccionado = st.selectbox(
+            "Selecciona el producto",
+            productos,
+            index=productos.index(st.session_state["producto_actual"]),
+            key="nombre_producto"
+        )
+
         st.session_state["producto_actual"] = producto_seleccionado
 
         # Buscar precio del producto seleccionado
@@ -39,12 +65,22 @@ def mostrar_abastecimiento(usuario):
         # Mostrar precio unitario (solo lectura)
         st.markdown(f"**Precio unitario:** ${precio_unitario:.2f}")
 
-        cantidad = st.selectbox("Cantidad a ingresar", list(range(1, 101)), key="cantidad_producto")
+        # Inicializar cantidad_producto en session_state si no existe
+        if "cantidad_producto" not in st.session_state:
+            st.session_state["cantidad_producto"] = 1
+
+        cantidad = st.selectbox(
+            "Cantidad a ingresar", 
+            list(range(1, 101)), 
+            index=st.session_state["cantidad_producto"] - 1,
+            key="cantidad_producto"
+        )
 
         # Calcular y mostrar el precio total
         precio_total = precio_unitario * cantidad
         st.markdown(f"**Precio total:** ${precio_total:.2f}")
 
+        # Campos de texto con persistencia automática por key
         tipo = st.text_input("Tipo de producto", key="tipo_producto")
         descripcion = st.text_area("Descripción del producto", key="descripcion_producto")
 
@@ -75,4 +111,3 @@ def mostrar_abastecimiento(usuario):
     finally:
         cursor.close()
         con.close()
-
