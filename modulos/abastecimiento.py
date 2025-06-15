@@ -60,9 +60,8 @@ def mostrar_abastecimiento(usuario):
         # Cantidad con persistencia
         if "cantidad_producto" not in st.session_state:
             st.session_state["cantidad_producto"] = 1
-
+            
         cantidad = st.number_input("Cantidad a ingresar", min_value=1, max_value=1000, value=st.session_state.get("cantidad_producto", 1), step=1, key="cantidad_producto")
-
 
         precio_total = precio_unitario * cantidad
         st.markdown(f"**Precio total:** ${precio_total:.2f}")
