@@ -16,6 +16,7 @@ def mostrar_ventas():
 
     if st.button("Registrar venta"):
         id_producto = producto_dict[producto_sel]
+
         cursor.execute(
             "SELECT Stock FROM INVENTARIO WHERE ID_Producto = %s",
             (id_producto,)
@@ -23,19 +24,24 @@ def mostrar_ventas():
         stock = cursor.fetchone()
 
         if stock and stock[0] >= cantidad:
-            cursor.execute(
-                "INSERT INTO VENTA (Fecha_venta, ID_Producto, Cantidad_vendida, Tipo_pago) "
-                "VALUES (NOW(), %s, %s, %s)",
-                (id_producto, cantidad, tipo_pago)
-            )
-            cursor.execute(
-                "UPDATE INVENTARIO SET Stock = Stock - %s WHERE ID_Producto = %s",
-                (cantidad, id_producto)
-            )
-            con.commit()
-            st.success("Venta registrada")
+            try:
+                # Mostrar datos que vamos a insertar para depuración
+                st.write(f"Insertando venta: Producto ID {id_producto}, Cantidad {cantidad}, Pago {tipo_pago}")
+                
+                cursor.execute(
+                    "INSERT INTO VENTA (Fecha_venta, ID_Producto, Cantidad_vendida, Tipo_pago) "
+                    "VALUES (NOW(), %s, %s, %s)",
+                    (id_producto, cantidad, tipo_pago)
+                )
+                cursor.execute(
+                    "UPDATE INVENTARIO SET Stock = Stock - %s WHERE ID_Producto = %s",
+                    (cantidad, id_producto)
+                )
+                con.commit()
+                st.success("Venta registrada correctamente")
+            except Exception as e:
+                st.error(f"Error al registrar la venta: {e}")
         else:
-            #Aquí ya no queda un else vacío: mostramos un error.
             st.error("No hay suficiente stock para esta venta.")
 
     con.close()
