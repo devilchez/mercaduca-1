@@ -66,10 +66,6 @@ def mostrar_abastecimiento(usuario):
         precio_total = precio_unitario * cantidad
         st.markdown(f"**Precio total:** ${precio_total:.2f}")
 
-        # Inputs de texto con persistencia por key
-        tipo = st.text_input("Tipo de producto", key="tipo_producto")
-        descripcion = st.text_area("Descripción del producto", key="descripcion_producto")
-
         if st.button("Registrar"):
             # Insertar producto
             cursor.execute(
