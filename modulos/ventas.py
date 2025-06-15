@@ -1,9 +1,9 @@
 import streamlit as st
-from config.conexion import conectar_db
+from config.conexion import obtener_conexion
 
 def mostrar_ventas():
     st.header("Registrar venta")
-    con = conectar_db()
+    con = obtener_conexion()
     cursor = con.cursor()
 
     cursor.execute("SELECT ID_Producto, Nombre_producto FROM PRODUCTO")
@@ -20,13 +20,14 @@ def mostrar_ventas():
         stock = cursor.fetchone()
 
         if stock and stock[0] >= cantidad:
-            cursor.execute("INSERT INTO VENTA (Fecha_venta, ID_Producto, Cantidad_vendida, Tipo_pago) VALUES (NOW(), %s, %s, %s)",
-                           (id_producto, cantidad, tipo_pago))
-            cursor.execute("UPDATE INVENTARIO SET Stock = Stock - %s WHERE ID_Producto = %s",
-                           (cantidad, id_producto))
+            cursor.execute(
+                "INSERT INTO VENTA (Fecha_venta, ID_Producto, Cantidad_vendida, Tipo_pago) VALUES (NOW(), %s, %s, %s)",
+                (id_producto, cantidad, tipo_pago)
+            )
+            cursor.execute(
+                "UPDATE INVENTARIO SET Stock = Stock - %s WHERE ID_Producto = %s",
+                (cantidad, id_producto)
+            )
             con.commit()
             st.success("Venta registrada")
         else:
-            st.error("Stock insuficiente")
-
-    con.close()
