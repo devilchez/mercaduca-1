@@ -20,16 +20,17 @@ def verificar_usuario(usuario, contrasena):
 
 def login():
     st.title("Inicio de sesión")
-    usuario = st.text_input("Usuario")
-    contrasena = st.text_input("Contraseña", type="password")
+    usuario = st.text_input("Usuario", key="usuario_input")
+    contrasena = st.text_input("Contraseña", type="password", key="contrasena_input")
 
     if st.button("Iniciar sesión"):
         tipo = verificar_usuario(usuario, contrasena)
         if tipo:
+            # Guarda usuario y tipo en session_state
+            st.session_state["usuario"] = usuario
+            st.session_state["tipo_usuario"] = tipo
             st.success(f"Bienvenido ({tipo})")
-            if tipo == "Administrador":
-                mostrar_ventas()
-            elif tipo == "Asistente":
-                mostrar_abastecimiento(usuario)
+            st.rerun()  # Fuerza recarga para continuar flujo
+
         else:
             st.error("Credenciales incorrectas")
