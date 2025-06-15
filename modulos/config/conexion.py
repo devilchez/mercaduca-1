@@ -5,7 +5,7 @@ def obtener_conexion():
     try:
         conexion = mysql.connector.connect(
             host='budyatsrezya80loqpsv-mysql.services.clever-cloud.com',
-            user='ugu7boqyhnkemf1dtu',
+            user='ugu7boqyhnkemf1d',
             password='3A57rTKfGrjUsSzuLQWd',
             database='budyatsrezya80loqpsv',
             port=3306
