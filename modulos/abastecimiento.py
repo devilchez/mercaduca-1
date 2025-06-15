@@ -25,11 +25,12 @@ def mostrar_abastecimiento(usuario):
         id_emprendimiento = opciones[seleccionado]
 
         # Formulario de ingreso
-        nombre = st.text_input("Nombre del producto")
-        descripcion = st.text_area("Descripción")
-        precio = st.number_input("Precio", min_value=0.01)
-        cantidad = st.number_input("Cantidad a ingresar", min_value=1)
-        tipo = st.text_input("Tipo de producto")
+        nombre = st.text_input("Nombre del producto", key="nombre_producto")
+        descripcion = st.text_area("Descripción", key="descripcion_producto")0
+        precio = st.number_input("Precio", min_value=0.01, key="precio_producto")
+        cantidad = st.number_input("Cantidad a ingresar", min_value=1, key="cantidad_producto")
+        tipo = st.text_input("Tipo de producto", key="tipo_producto")
+
 
         if st.button("Registrar"):
             # Insertar en PRODUCTO
