@@ -24,6 +24,6 @@ else:
         mostrar_abastecimiento()
     elif opcion == "Cerrar sesión":
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
