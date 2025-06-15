@@ -31,3 +31,6 @@ def mostrar_ventas():
             con.commit()
             st.success("Venta registrada")
         else:
+                    else:
+            st.error("No hay suficiente stock para esta venta.")
+
