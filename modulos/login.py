@@ -26,11 +26,9 @@ def login():
     if st.button("Iniciar sesión"):
         tipo = verificar_usuario(usuario, contrasena)
         if tipo:
-            # Guarda usuario y tipo en session_state
             st.session_state["usuario"] = usuario
             st.session_state["tipo_usuario"] = tipo
             st.success(f"Bienvenido ({tipo})")
-            st.rerun()  # Fuerza recarga para continuar flujo
-
+            st.experimental_rerun()
         else:
             st.error("Credenciales incorrectas")
