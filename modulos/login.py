@@ -1,5 +1,5 @@
 import streamlit as st
-from config.conexion import obtener_conexion
+from modulos.config.conexion import obtener_conexion
 from modulos.ventas import mostrar_ventas
 from modulos.abastecimiento import mostrar_abastecimiento
 
