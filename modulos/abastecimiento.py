@@ -1,5 +1,5 @@
 import streamlit as st
-from config.conexion import obtener_conexion
+from modulos.config.conexion import obtener_conexion
 
 def mostrar_abastecimiento(usuario):
     st.header("Registrar abastecimiento")
