@@ -5,12 +5,18 @@ from modulos.abastecimiento import mostrar_abastecimiento
 
 def verificar_usuario(usuario, contrasena):
     con = obtener_conexion()
-    cursor = con.cursor()
-    query = "SELECT Tipo_usuario FROM USUARIO WHERE usuario = %s AND contrasena = %s"
-    cursor.execute(query, (usuario, contrasena))
-    result = cursor.fetchone()
-    con.close()
-    return result[0] if result else None
+    if not con:
+        st.error("⚠️ No se pudo conectar a la base de datos.")
+        return None
+
+    try:
+        cursor = con.cursor()
+        query = "SELECT Tipo_usuario FROM USUARIO WHERE usuario = %s AND contrasena = %s"
+        cursor.execute(query, (usuario, contrasena))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        con.close()
 
 def login():
     st.title("Inicio de sesión")
