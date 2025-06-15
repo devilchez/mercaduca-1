@@ -9,11 +9,11 @@ def mostrar_abastecimiento(usuario):
         cursor = con.cursor()
 
         # Obtener lista de emprendedores
-        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendedor FROM EMPRENDIMIENTO")
+        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendedores = cursor.fetchall()
 
         if not emprendedores:
-            st.warning("No hay emprendedores registrados.")
+            st.warning("No hay emprendimientos registrados.")
             return
 
         opciones = {nombre: emp_id for emp_id, nombre in emprendedores}
