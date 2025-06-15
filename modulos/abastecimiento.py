@@ -2,7 +2,12 @@ import streamlit as st
 from modulos.config.conexion import obtener_conexion
 from datetime import datetime
 
-def mostrar_abastecimiento(usuario):
+def mostrar_abastecimiento():
+    if "usuario" not in st.session_state:
+        st.warning("⚠️ Debes iniciar sesión.")
+        st.stop()
+    
+    usuario = st.session_state["usuario"]
     st.header("Registrar abastecimiento")
 
     try:
