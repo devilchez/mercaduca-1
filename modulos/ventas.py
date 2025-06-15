@@ -5,7 +5,8 @@ def mostrar_ventas():
     st.header("Registrar venta")
     con = obtener_conexion()
     cursor = con.cursor()
-
+    st.write(f"Conectado a base de datos: {con.database} en host: {con.server_host}")
+    
     cursor.execute("SELECT ID_Producto, Nombre_producto FROM PRODUCTO")
     productos = cursor.fetchall()
     producto_dict = {nombre: idp for idp, nombre in productos}
@@ -44,4 +45,9 @@ def mostrar_ventas():
         else:
             st.error("No hay suficiente stock para esta venta.")
 
+    cursor.execute("SELECT * FROM VENTA ORDER BY Fecha_venta DESC LIMIT 5")
+    ventas = cursor.fetchall()
+    st.write("Últimas ventas registradas:")
+    st.write(ventas)
+    
     con.close()
