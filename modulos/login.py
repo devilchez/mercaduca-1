@@ -1,10 +1,10 @@
 import streamlit as st
-from config.conexion import conectar_db
+from config.conexion import obtener_conexion
 from modulos.ventas import mostrar_ventas
 from modulos.abastecimiento import mostrar_abastecimiento
 
 def verificar_usuario(usuario, contrasena):
-    con = conectar_db()
+    con = obtener_conexion()
     cursor = con.cursor()
     query = "SELECT Tipo_usuario FROM USUARIO WHERE usuario = %s AND contrasena = %s"
     cursor.execute(query, (usuario, contrasena))
