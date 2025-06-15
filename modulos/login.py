@@ -29,6 +29,6 @@ def login():
             st.session_state["usuario"] = usuario
             st.session_state["tipo_usuario"] = tipo
             st.success(f"Bienvenido ({tipo})")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Credenciales incorrectas")
