@@ -64,10 +64,6 @@ def mostrar_abastecimiento(usuario):
         cantidad = st.number_input("Cantidad a ingresar", min_value=1, max_value=1000, step=1, key="cantidad_producto")
         st.markdown(f"**Precio total:** ${precio_unitario * cantidad:.2f}")
 
-        # Tipo y descripción (opcional)
-        tipo = st.text_input("Tipo de producto (opcional)", key="tipo_producto")
-        descripcion = st.text_area("Descripción del producto (opcional)", key="descripcion_producto")
-
         if st.button("Registrar"):
             # Insertar en ABASTECIMIENTO
             cursor.execute("""
