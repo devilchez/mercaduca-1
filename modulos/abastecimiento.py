@@ -20,24 +20,18 @@ def mostrar_abastecimiento(usuario):
         opciones = {nombre: emp_id for emp_id, nombre in emprendedores}
         lista_emprendedores = list(opciones.keys())
 
-        # Inicializar valor por defecto en session_state para select_emprendedor
+        # Inicializar la clave en session_state solo si no existe o no es válida
         if "select_emprendedor" not in st.session_state or st.session_state["select_emprendedor"] not in lista_emprendedores:
             st.session_state["select_emprendedor"] = lista_emprendedores[0]
 
-        emprendedor = st.selectbox(
-            "Selecciona un emprendedor",
-            lista_emprendedores,
-            index=lista_emprendedores.index(st.session_state["select_emprendedor"]),
-            key="select_emprendedor"
-        )
+        # Mostrar selectbox para emprendedor con índice seguro
+        index_emprendedor = lista_emprendedores.index(st.session_state["select_emprendedor"])
+        emprendedor = st.selectbox("Selecciona un emprendedor", lista_emprendedores, index=index_emprendedor, key="select_emprendedor")
 
         id_emprendimiento = opciones[emprendedor]
 
-        # Obtener productos con su precio
-        cursor.execute(
-            "SELECT Nombre_producto, Precio FROM PRODUCTO WHERE ID_Emprendimiento = %s", 
-            (id_emprendimiento,)
-        )
+        # Obtener productos con su precio para el emprendedor seleccionado
+        cursor.execute("SELECT Nombre_producto, Precio FROM PRODUCTO WHERE ID_Emprendimiento = %s", (id_emprendimiento,))
         productos_data = cursor.fetchall()
 
         if not productos_data:
@@ -46,46 +40,35 @@ def mostrar_abastecimiento(usuario):
 
         productos = [row[0] for row in productos_data]
 
-        # Inicializar valor por defecto en session_state para producto_actual
+        # Inicializar producto_actual si no existe o no es válido
         if "producto_actual" not in st.session_state or st.session_state["producto_actual"] not in productos:
             st.session_state["producto_actual"] = productos[0]
 
-        producto_seleccionado = st.selectbox(
-            "Selecciona el producto",
-            productos,
-            index=productos.index(st.session_state["producto_actual"]),
-            key="nombre_producto"
-        )
+        # Índice seguro para producto seleccionado
+        index_producto = productos.index(st.session_state["producto_actual"])
 
-        st.session_state["producto_actual"] = producto_seleccionado
+        producto_seleccionado = st.selectbox("Selecciona el producto", productos, index=index_producto, key="producto_actual")
 
         # Buscar precio del producto seleccionado
         precio_unitario = next((precio for nombre, precio in productos_data if nombre == producto_seleccionado), 0)
 
-        # Mostrar precio unitario (solo lectura)
         st.markdown(f"**Precio unitario:** ${precio_unitario:.2f}")
 
-        # Inicializar cantidad_producto en session_state si no existe
+        # Inicializar cantidad_producto si no existe
         if "cantidad_producto" not in st.session_state:
             st.session_state["cantidad_producto"] = 1
 
-        cantidad = st.selectbox(
-            "Cantidad a ingresar", 
-            list(range(1, 101)), 
-            index=st.session_state["cantidad_producto"] - 1,
-            key="cantidad_producto"
-        )
+        cantidad = st.selectbox("Cantidad a ingresar", list(range(1, 101)), index=st.session_state["cantidad_producto"]-1, key="cantidad_producto")
 
-        # Calcular y mostrar el precio total
         precio_total = precio_unitario * cantidad
         st.markdown(f"**Precio total:** ${precio_total:.2f}")
 
-        # Campos de texto con persistencia automática por key
+        # Los inputs de texto ya guardan estado automáticamente por key
         tipo = st.text_input("Tipo de producto", key="tipo_producto")
         descripcion = st.text_area("Descripción del producto", key="descripcion_producto")
 
         if st.button("Registrar"):
-            # Insertar producto (puedes omitir si ya existen y solo registrar abastecimiento)
+            # Insertar producto
             cursor.execute(
                 "INSERT INTO PRODUCTO (Nombre_producto, Descripcion, Precio, Tipo_producto, ID_Emprendimiento) VALUES (%s, %s, %s, %s, %s)",
                 (producto_seleccionado, descripcion, precio_unitario, tipo, id_emprendimiento)
