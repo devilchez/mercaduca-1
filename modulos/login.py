@@ -12,7 +12,7 @@ def verificar_usuario(usuario, contrasena):
     con.close()
     return result[0] if result else None
 
-def login():
+def log():
     st.title("Inicio de sesión")
     usuario = st.text_input("Usuario")
     contrasena = st.text_input("Contraseña", type="password")
