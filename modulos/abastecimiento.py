@@ -8,62 +8,70 @@ def mostrar_abastecimiento(usuario):
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener lista de emprendedores desde la base de datos
+        # Obtener lista de emprendedores
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendedor FROM EMPRENDIMIENTO")
         emprendedores = cursor.fetchall()
 
         if not emprendedores:
-            st.warning("No hay emprendedores registrados en la base de datos.")
+            st.warning("No hay emprendedores registrados.")
             return
 
+        # Diccionario {nombre: id}
         opciones = {nombre: emp_id for emp_id, nombre in emprendedores}
-
-        # Mostrar lista desplegable para seleccionar al emprendedor
-        seleccionado = st.selectbox("Selecciona un emprendedor", list(opciones.keys()))
-
-        # Obtener ID del emprendedor seleccionado
+        seleccionado = st.selectbox("Selecciona un emprendedor", list(opciones.keys()), key="emprendedor_select")
         id_emprendimiento = opciones[seleccionado]
 
-        # Formulario de ingreso
-        nombre = st.text_input("Nombre del producto", key="nombre_producto")
-        descripcion = st.text_area("Descripción", key="descripcion_producto")
-        precio = st.number_input("Precio", min_value=0.01, key="precio_producto")
-        cantidad = st.number_input("Cantidad a ingresar", min_value=1, key="cantidad_producto")
-        tipo = st.text_input("Tipo de producto", key="tipo_producto")
+        # Obtener productos con su precio
+        cursor.execute("SELECT Nombre_producto, Precio FROM PRODUCTO WHERE ID_Emprendimiento = %s", (id_emprendimiento,))
+        productos_data = cursor.fetchall()
 
+        if not productos_data:
+            st.warning("Este emprendedor aún no tiene productos registrados.")
+            return
+
+        productos = [row[0] for row in productos_data]
+        producto_seleccionado = st.selectbox("Selecciona el producto", productos, key="nombre_producto")
+
+        # Buscar precio del producto seleccionado
+        precio_unitario = next((precio for nombre, precio in productos_data if nombre == producto_seleccionado), 0)
+
+        # Mostrar precio unitario (solo lectura)
+        st.markdown(f"**Precio unitario:** ${precio_unitario:.2f}")
+
+        cantidad = st.selectbox("Cantidad a ingresar", list(range(1, 101)), key="cantidad_producto")
+
+        # Calcular y mostrar el precio total
+        precio_total = precio_unitario * cantidad
+        st.markdown(f"**Precio total:** ${precio_total:.2f}")
+
+        tipo = st.text_input("Tipo de producto", key="tipo_producto")
+        descripcion = st.text_area("Descripción del producto", key="descripcion_producto")
 
         if st.button("Registrar"):
-            # Insertar en PRODUCTO
+            # Insertar producto (puedes omitir si ya existen y solo registrar abastecimiento)
             cursor.execute(
                 "INSERT INTO PRODUCTO (Nombre_producto, Descripcion, Precio, Tipo_producto, ID_Emprendimiento) VALUES (%s, %s, %s, %s, %s)",
-                (nombre, descripcion, precio, tipo, id_emprendimiento)
+                (producto_seleccionado, descripcion, precio_unitario, tipo, id_emprendimiento)
             )
             id_producto = cursor.lastrowid
 
-            # Insertar en ABASTECIMIENTO
             cursor.execute(
                 "INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, ID_Producto, Cantidad, Fecha_ingreso) VALUES (%s, %s, %s, NOW())",
                 (id_emprendimiento, id_producto, cantidad)
             )
 
-            # Insertar en INVENTARIO
             cursor.execute(
                 "INSERT INTO INVENTARIO (ID_Producto, Cantidad_ingresada, Stock, Fecha_ingreso) VALUES (%s, %s, %s, NOW())",
                 (id_producto, cantidad, cantidad)
             )
 
             con.commit()
-            st.success("Producto ingresado al inventario correctamente")
+            st.success("Producto registrado exitosamente en inventario.")
 
     except Exception as e:
-        st.error(f"Error al acceder a la base de datos: {e}")
+        st.error(f"Error al registrar: {e}")
 
     finally:
         cursor.close()
         con.close()
-
-
-        # Formulario de ingreso
-        nombre = st.text_input("Nombre del producto")
-        descripcion = st.text
 
