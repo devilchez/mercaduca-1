@@ -6,4 +6,4 @@ from modulos.login import login
 import streamlit as st
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
-log()
+login()
