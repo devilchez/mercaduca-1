@@ -1,3 +1,6 @@
+import streamlit as st
+from modulos.config.conexion import obtener_conexion
+
 def registrar_emprendedor():
     if "usuario" not in st.session_state:
         st.warning("⚠️ Debes iniciar sesión.")
@@ -20,10 +23,18 @@ def registrar_emprendedor():
                 con = obtener_conexion()
                 cursor = con.cursor()
 
+                # Insertar en EMPRENDEDOR
                 cursor.execute("""
-                    INSERT INTO registro (Nombre, Apellido, Correo, telefono, Nombre_emprendimiento)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (nombre, apellido, correo, telefono, nombre_emprendimiento))
+                    INSERT INTO EMPRENDEDOR (Nombre, Apellido, Correo, Telefono)
+                    VALUES (%s, %s, %s, %s)
+                """, (nombre, apellido, correo, telefono))
+                id_emprendedor = cursor.lastrowid
+
+                # Insertar en EMPRENDIMIENTO
+                cursor.execute("""
+                    INSERT INTO EMPRENDIMIENTO (ID_Emprendedor, Nombre_emprendimiento)
+                    VALUES (%s, %s)
+                """, (id_emprendedor, nombre_emprendimiento))
 
                 con.commit()
                 st.success("✅ Emprendedor registrado correctamente.")
