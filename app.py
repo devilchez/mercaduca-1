@@ -23,7 +23,7 @@ else:
         mostrar_ventas()
     elif opcion == "Abastecimiento" and tipo in ["Asistente", "Administrador"]:
         mostrar_abastecimiento()
-     elif opcion == "Registrar Emprendedor" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Registrar Emprendedor" and tipo in ["Asistente", "Administrador"]:
         registrar_emprendedor()
     elif opcion == "Cerrar sesión":
         st.session_state.clear()
