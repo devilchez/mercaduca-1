@@ -27,14 +27,14 @@ def registrar_emprendedor():
                 cursor.execute("""
                     INSERT INTO REGISTRO (Nombre, Apellido, Correo, Telefono)
                     VALUES (%s, %s, %s, %s)
-                """, (nombre, apellido, correo, telefono))
+                """, (Nombre, Apellido, Correo, Telefono))
                 id_emprendedor = cursor.lastrowid
 
                 # Insertar en EMPRENDIMIENTO
                 cursor.execute("""
                     INSERT INTO EMPRENDIMIENTO (ID_Emprendedor, Nombre_emprendimiento)
                     VALUES (%s, %s)
-                """, (id_emprendedor, nombre_emprendimiento))
+                """, (id_emprendedor, Emprendimiento))
 
                 con.commit()
                 st.success("✅ Emprendedor registrado correctamente.")
