@@ -9,11 +9,11 @@ def registrar_emprendedor():
     st.header("Registrar nuevo emprendedor")
 
     # Formulario
-    nombre = st.text_input("Nombre")
-    apellido = st.text_input("Apellido")
-    correo = st.text_input("Correo electrónico")
-    telefono = st.text_input("Teléfono")
-    nombre_emprendimiento = st.text_input("Nombre del emprendimiento")
+    Nombre = st.text_input("Nombre")
+    Apellido = st.text_input("Apellido")
+    Correo = st.text_input("Correo electrónico")
+    Teléfono = st.text_input("Teléfono")
+    Emprendimiento = st.text_input("Nombre del emprendimiento")
 
     if st.button("Registrar"):
         if not (nombre and apellido and correo and telefono and nombre_emprendimiento):
