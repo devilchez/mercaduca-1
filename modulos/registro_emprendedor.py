@@ -1,6 +1,3 @@
-import streamlit as st
-from modulos.config.conexion import obtener_conexion
-
 def registrar_emprendedor():
     if "usuario" not in st.session_state:
         st.warning("⚠️ Debes iniciar sesión.")
@@ -9,11 +6,11 @@ def registrar_emprendedor():
     st.header("Registrar nuevo emprendedor")
 
     # Formulario
-    Nombre = st.text_input("Nombre")
-    Apellido = st.text_input("Apellido")
-    Correo = st.text_input("Correo electrónico")
-    Teléfono = st.text_input("Teléfono")
-    Emprendimiento = st.text_input("Nombre del emprendimiento")
+    nombre = st.text_input("Nombre")
+    apellido = st.text_input("Apellido")
+    correo = st.text_input("Correo electrónico")
+    telefono = st.text_input("Teléfono")
+    nombre_emprendimiento = st.text_input("Nombre del emprendimiento")
 
     if st.button("Registrar"):
         if not (nombre and apellido and correo and telefono and nombre_emprendimiento):
@@ -23,18 +20,10 @@ def registrar_emprendedor():
                 con = obtener_conexion()
                 cursor = con.cursor()
 
-                # Insertar en EMPRENDEDOR
                 cursor.execute("""
-                    INSERT INTO REGISTRO (Nombre, Apellido, Correo, Telefono)
-                    VALUES (%s, %s, %s, %s)
-                """, (Nombre, Apellido, Correo, Telefono))
-                id_emprendedor = cursor.lastrowid
-
-                # Insertar en EMPRENDIMIENTO
-                cursor.execute("""
-                    INSERT INTO EMPRENDIMIENTO (ID_Emprendedor, Nombre_emprendimiento)
-                    VALUES (%s, %s)
-                """, (id_emprendedor, Emprendimiento))
+                    INSERT INTO registro (Nombre, Apellido, Correo, telefono, Nombre_emprendimiento)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (nombre, apellido, correo, telefono, nombre_emprendimiento))
 
                 con.commit()
                 st.success("✅ Emprendedor registrado correctamente.")
