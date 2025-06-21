@@ -4,15 +4,12 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("Registrar venta")
 
-    # Inicializar estructuras
-    if "secciones" not in st.session_state:
+    # Solo inicializa una vez con 1 sección y 1 producto
+    if "initialized" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
-    if "contador_secciones" not in st.session_state:
         st.session_state.contador_secciones = 1
-    if "emprendimientos_seleccionados" not in st.session_state:
         st.session_state.emprendimientos_seleccionados = {}
-    if "productos_seleccionados" not in st.session_state:
-        st.session_state.productos_seleccionados = {}
+        st.session_state.initialized = True  # evita que se reinicie al rerun
 
     try:
         con = obtener_conexion()
@@ -148,7 +145,7 @@ def mostrar_ventas():
 
                 con.commit()
                 st.success("✅ Venta registrada exitosamente.")
-                st.session_state.clear()  # limpiar todo después de registrar
+                st.session_state.clear()
 
             except Exception as e:
                 con.rollback()
