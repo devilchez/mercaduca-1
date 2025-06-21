@@ -15,7 +15,7 @@ def mostrar_ventas():
         st.session_state.contador_secciones = 1
 
     def recargar():
-        st.experimental_rerun()
+        st.rerun()
 
     try:
         con = obtener_conexion()
