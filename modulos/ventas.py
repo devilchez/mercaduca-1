@@ -4,8 +4,9 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("🧾 Registrar venta")
 
-    # Inicialización de estado
+    # Inicialización del estado si no existe
     if "secciones" not in st.session_state:
+        # Una sección por defecto con 1 producto inicial vacío
         st.session_state.secciones = [{
             "id": 0,
             "emprendimiento": None,
@@ -20,12 +21,12 @@ def mostrar_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Cargar emprendimientos
+        # Obtener emprendimientos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        # Cargar productos agrupados por emprendimiento
+        # Obtener productos y agrupar por emprendimiento
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
@@ -39,18 +40,12 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
-        # Asegurar que todas las secciones tengan las claves requeridas
-        for seccion in st.session_state.secciones:
-            if "emprendimiento" not in seccion:
-                seccion["emprendimiento"] = None
-            if "productos" not in seccion or not isinstance(seccion["productos"], list):
-                seccion["productos"] = [{"producto": None, "cantidad": 1}]
-
-        # Mostrar secciones
+        # Renderizar cada sección
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
+            # Selección del emprendimiento (solo 1 por sección)
             opciones_emprendimiento = ["-- Selecciona --"] + list(emprend_dict.keys())
             idx_emp_sel = 0
             if seccion["emprendimiento"]:
@@ -68,12 +63,14 @@ def mostrar_ventas():
             if emprendimiento_sel == "-- Selecciona --":
                 seccion["emprendimiento"] = None
                 seccion["productos"] = []
-                st.info("Selecciona un emprendimiento para poder agregar productos.")
+                st.info("Selecciona un emprendimiento para agregar productos.")
                 continue
             else:
                 seccion["emprendimiento"] = emprend_dict[emprendimiento_sel]
 
             id_emp = seccion["emprendimiento"]
+
+            # Productos disponibles para este emprendimiento
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
 
             if not productos_disponibles:
@@ -83,12 +80,12 @@ def mostrar_ventas():
 
             opciones_productos = ["-- Selecciona --"] + [p["nombre"] for p in productos_disponibles]
 
-            # Asegurar que haya al menos un producto en la lista
+            # Asegurar que haya al menos un producto para mostrar
             if len(seccion["productos"]) == 0:
                 seccion["productos"].append({"producto": None, "cantidad": 1})
 
+            # Renderizar productos dentro de la sección
             for i, prod in enumerate(seccion["productos"]):
-                # Sanidad para evitar errores
                 if not isinstance(prod, dict):
                     seccion["productos"][i] = {"producto": None, "cantidad": 1}
                 else:
@@ -97,7 +94,7 @@ def mostrar_ventas():
                     if "cantidad" not in prod:
                         seccion["productos"][i]["cantidad"] = 1
 
-                col1, col2 = st.columns([3,1])
+                col1, col2 = st.columns([3, 1])
 
                 idx_prod_sel = 0
                 if seccion["productos"][i]["producto"] in opciones_productos:
@@ -123,12 +120,12 @@ def mostrar_ventas():
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
 
-            # Botón para agregar producto
+            # Botón para agregar producto a esta sección
             if st.button(f"➕ Agregar producto a emprendimiento #{sec_id + 1}", key=f"add_prod_{sec_id}"):
                 seccion["productos"].append({"producto": None, "cantidad": 1})
                 recargar()
 
-            # Calcular subtotal sección
+            # Calcular subtotal de esta sección
             subtotal_seccion = 0
             for p in seccion["productos"]:
                 if p["producto"]:
@@ -143,9 +140,8 @@ def mostrar_ventas():
                         })
 
             st.markdown(f"🧮 Subtotal emprendimiento #{sec_id + 1}: **${subtotal_seccion:.2f}**")
-            total_general += subtotal_seccion
 
-        # Botón para agregar nuevo emprendimiento
+        # Botón para agregar nueva sección de emprendimiento
         if st.button("➕ Agregar emprendimiento"):
             nuevo_id = st.session_state.contador_secciones
             st.session_state.secciones.append({
@@ -156,15 +152,16 @@ def mostrar_ventas():
             st.session_state.contador_secciones += 1
             recargar()
 
-        # Mostrar total general
+        # Mostrar total general fuera de secciones
         if productos_vender:
+            total_general = sum(p["precio_unitario"] * p["cantidad"] for p in productos_vender)
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
-        # Tipo de pago
+        # Selector tipo de pago (siempre visible)
         tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
-        # Botón registrar venta (pendiente)
+        # Botón para registrar venta (lógica pendiente)
         if st.button("✅ Registrar venta"):
             if not productos_vender:
                 st.error("Debes seleccionar al menos un producto antes de registrar la venta.")
@@ -176,5 +173,7 @@ def mostrar_ventas():
         st.error(f"❌ Error general: {e}")
 
     finally:
-        if 'cursor' in locals(): cursor.close()
-        if 'con' in locals(): con.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'con' in locals():
+            con.close()
