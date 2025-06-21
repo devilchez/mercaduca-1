@@ -4,22 +4,24 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("Registrar venta")
 
-    # Inicializar estado
+    # Estado para múltiples bloques de ventas por emprendimiento
     if "secciones" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
     if "contador_secciones" not in st.session_state:
         st.session_state.contador_secciones = 1
+    if "emprendimientos_seleccionados" not in st.session_state:
+        st.session_state.emprendimientos_seleccionados = {}
 
     try:
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Emprendimientos
+        # Obtener emprendimientos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        # Productos
+        # Obtener todos los productos
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
@@ -29,72 +31,76 @@ def mostrar_ventas():
         productos_vender = []
         total_general = 0
 
-        with st.form("formulario_venta", clear_on_submit=False):
-            for seccion in st.session_state.secciones:
-                sec_id = seccion["id"]
-                st.markdown(f"## Emprendimiento #{sec_id + 1}")
+        for seccion in st.session_state.secciones:
+            sec_id = seccion["id"]
+            st.markdown(f"## Emprendimiento #{sec_id + 1}")
 
-                emp_sel = st.selectbox(
-                    f"Selecciona un emprendimiento (Sección {sec_id + 1})",
-                    ["-- Selecciona --"] + list(emprend_dict.keys()),
-                    key=f"emprend_{sec_id}"
-                )
+            # Selección de emprendimiento fuera del form
+            emp_sel = st.selectbox(
+                f"Selecciona un emprendimiento para la sección {sec_id + 1}",
+                ["-- Selecciona --"] + list(emprend_dict.keys()),
+                key=f"emprend_{sec_id}"
+            )
 
-                if emp_sel != "-- Selecciona --":
-                    id_emp = emprend_dict[emp_sel]
-                    opciones = productos_por_emprendimiento.get(id_emp, [])
-                    if not opciones:
-                        st.warning("Este emprendimiento no tiene productos.")
-                        continue
+            if emp_sel == "-- Selecciona --":
+                continue
 
-                    opciones_str = [f"{nombre} (${precio:.2f})" for _, nombre, precio in opciones]
+            id_emp = emprend_dict[emp_sel]
+            st.session_state.emprendimientos_seleccionados[sec_id] = id_emp
 
-                    for i in range(seccion["productos"]):
-                        st.markdown(f"### Producto #{i + 1} de {emp_sel}")
-                        col1, col2 = st.columns(2)
+            opciones = productos_por_emprendimiento.get(id_emp, [])
+            if not opciones:
+                st.warning("Este emprendimiento no tiene productos.")
+                continue
 
-                        with col1:
-                            prod_sel = st.selectbox(
-                                f"Producto {i + 1} (Sección {sec_id + 1})",
-                                ["-- Selecciona --"] + opciones_str,
-                                key=f"producto_{sec_id}_{i}"
-                            )
-                        with col2:
-                            cantidad = st.number_input(
-                                f"Cantidad {i + 1} (Sección {sec_id + 1})",
-                                min_value=1,
-                                step=1,
-                                key=f"cantidad_{sec_id}_{i}"
-                            )
+            opciones_str = [f"{nombre} (${precio:.2f})" for _, nombre, precio in opciones]
 
-                        if prod_sel != "-- Selecciona --":
-                            index = opciones_str.index(prod_sel)
-                            id_producto, nombre_producto, precio_unitario = opciones[index]
-                            subtotal = cantidad * precio_unitario
-                            total_general += subtotal
-                            productos_vender.append({
-                                "id_producto": id_producto,
-                                "precio_unitario": precio_unitario,
-                                "cantidad": cantidad,
-                                "nombre": nombre_producto
-                            })
-                            st.markdown(f"**Subtotal:** ${subtotal:.2f}")
+            with st.form(f"form_emprend_{sec_id}", clear_on_submit=False):
+                for i in range(seccion["productos"]):
+                    st.markdown(f"### Producto #{i + 1} de {emp_sel}")
+                    col1, col2 = st.columns(2)
 
-                    if st.form_submit_button(f"➕ Agregar otro producto a {emp_sel}", key=f"agregar_producto_{sec_id}"):
-                        seccion["productos"] += 1
-                        st.rerun()
+                    with col1:
+                        prod_sel = st.selectbox(
+                            f"Producto {i + 1} (Sección {sec_id + 1})",
+                            ["-- Selecciona --"] + opciones_str,
+                            key=f"producto_{sec_id}_{i}"
+                        )
+                    with col2:
+                        cantidad = st.number_input(
+                            f"Cantidad {i + 1} (Sección {sec_id + 1})",
+                            min_value=1,
+                            step=1,
+                            key=f"cantidad_{sec_id}_{i}"
+                        )
 
-            st.markdown(f"## 💰 Total a cobrar: ${total_general:.2f}" if productos_vender else "")
+                    if prod_sel != "-- Selecciona --":
+                        index = opciones_str.index(prod_sel)
+                        id_producto, nombre_producto, precio_unitario = opciones[index]
+                        subtotal = cantidad * precio_unitario
+                        total_general += subtotal
+                        productos_vender.append({
+                            "id_producto": id_producto,
+                            "precio_unitario": precio_unitario,
+                            "cantidad": cantidad,
+                            "nombre": nombre_producto
+                        })
+                        st.markdown(f"**Subtotal:** ${subtotal:.2f}")
 
-            col1, col2 = st.columns(2)
-            if col1.form_submit_button("➕ Agregar otro emprendimiento"):
-                st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
-                st.session_state.contador_secciones += 1
-                st.rerun()
+                agregar = st.form_submit_button(f"➕ Agregar otro producto a {emp_sel}")
+                if agregar:
+                    seccion["productos"] += 1
+                    st.rerun()
 
-            registrar = col2.form_submit_button("✅ Registrar venta")
+        st.markdown(f"## 💰 Total general: ${total_general:.2f}" if productos_vender else "")
 
-        if registrar:
+        col1, col2 = st.columns(2)
+        if col1.button("➕ Agregar otro emprendimiento"):
+            st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
+            st.session_state.contador_secciones += 1
+            st.rerun()
+
+        if col2.button("✅ Registrar venta"):
             if not productos_vender:
                 st.error("Debes seleccionar al menos un producto.")
                 return
@@ -145,6 +151,7 @@ def mostrar_ventas():
                 st.success("✅ Venta registrada correctamente.")
                 st.session_state.secciones = [{"id": 0, "productos": 1}]
                 st.session_state.contador_secciones = 1
+                st.session_state.emprendimientos_seleccionados = {}
 
             except Exception as e:
                 con.rollback()
@@ -152,7 +159,6 @@ def mostrar_ventas():
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
-
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
