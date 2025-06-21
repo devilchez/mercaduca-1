@@ -34,7 +34,7 @@ def mostrar_ventas():
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
-            # Selector de emprendimiento (solo uno por sección)
+            # Selector de emprendimiento
             emp_sel = st.selectbox(
                 f"Selecciona un emprendimiento (sección {sec_id + 1})",
                 ["-- Selecciona --"] + list(emprend_dict.keys()),
@@ -52,7 +52,12 @@ def mostrar_ventas():
                 st.warning("Este emprendimiento no tiene productos.")
                 continue
 
-            opciones_str = [f"{nombre} (ID: {idp}) - ${precio:.2f}" for idp, nombre, precio in productos_disponibles]
+            # Usar diccionario para evitar errores de index
+            opciones_dict = {
+                f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, nombre, precio)
+                for idp, nombre, precio in productos_disponibles
+            }
+            opciones_str = list(opciones_dict.keys())
 
             for i in range(seccion["productos"]):
                 st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
@@ -73,8 +78,7 @@ def mostrar_ventas():
                     )
 
                 if prod_sel != "-- Selecciona --":
-                    index = opciones_str.index(prod_sel)
-                    id_producto, nombre_producto, precio_unitario = productos_disponibles[index]
+                    id_producto, nombre_producto, precio_unitario = opciones_dict[prod_sel]
                     subtotal = cantidad * precio_unitario
                     total_general += subtotal
                     productos_vender.append({
@@ -83,10 +87,10 @@ def mostrar_ventas():
                         "cantidad": cantidad,
                         "nombre": nombre_producto
                     })
-                    st.caption(f"🆔 Código: `{id_producto}`")
+                    st.caption(f"🆔 Código del producto: `{id_producto}`")
                     st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
 
-            # Botón para agregar más productos dentro del mismo emprendimiento
+            # Botón para agregar más productos al mismo emprendimiento
             if st.button(f"➕ Agregar otro producto a {emp_sel}", key=f"agrega_{sec_id}"):
                 seccion["productos"] += 1
                 st.rerun()
@@ -108,7 +112,7 @@ def mostrar_ventas():
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
-            # Validación de stock
+            # Verificar stock disponible
             errores = []
             for item in productos_vender:
                 cursor.execute("SELECT SUM(Stock) FROM INVENTARIO WHERE ID_Producto = %s", (item["id_producto"],))
@@ -122,7 +126,6 @@ def mostrar_ventas():
                     st.error(err)
                 return
 
-            # Registro en base de datos
             try:
                 cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", ("Efectivo",))
                 id_venta = cursor.lastrowid
