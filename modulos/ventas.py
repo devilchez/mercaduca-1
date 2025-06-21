@@ -108,9 +108,9 @@ def mostrar_ventas():
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
+            # Verificar que los productos tienen el ID_Producto correctamente
             st.markdown("### 🔍 Depuración antes del insert:")
             for item in productos_vender:
-                st.write("Producto a registrar:", item)
                 if not item["id_producto"]:
                     st.error(f"⛔ Error: Producto sin ID. Detalle: {item}")
                     return
@@ -129,19 +129,27 @@ def mostrar_ventas():
                 return
 
             try:
+                # 1. Insertar la venta
                 cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", ("Efectivo",))
-                id_venta = cursor.lastrowid
+                id_venta = cursor.lastrowid  # Obtener el ID de la venta recién insertada
 
+                # 2. Insertar productos en PRODUCTOXVENTA con id_venta
                 for item in productos_vender:
                     if not item["id_producto"]:
                         raise Exception("⛔ Intento de insertar producto con ID vacío.")
 
                     cursor.execute(
-                        "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
+                        "INSERT INTO PRODUCTOXVENTA (id_venta, ID_Producto, Cantidad, Precio_unitario) "
                         "VALUES (%s, %s, %s, %s)",
-                        (id_venta, item["id_producto"], item["cantidad"], item["precio_unitario"])
+                        (
+                            id_venta,  # Ahora usamos el id_venta de la venta recién insertada
+                            str(item["id_producto"]),  # Aseguramos que ID_Producto sea un string
+                            int(item["cantidad"]),  # Cantidad como entero
+                            float(item["precio_unitario"])  # Precio unitario como float
+                        )
                     )
 
+                    # Descontar inventario con FIFO
                     cantidad_restante = item["cantidad"]
                     cursor.execute(
                         "SELECT ID_Inventario, Stock FROM INVENTARIO "
