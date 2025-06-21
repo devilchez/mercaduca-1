@@ -36,6 +36,7 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
+        # Mostrar secciones de emprendimientos y productos
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
@@ -131,21 +132,21 @@ def mostrar_ventas():
             if st.button("✅ Registrar venta"):
                 try:
                     fecha_venta = datetime.now()
+                    total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
 
-                    # Insertar en VENTA sin id_producto porque es la venta general
+                    # Insertar venta con suma total de cantidad vendida
                     cursor.execute(
-                        "INSERT INTO VENTA (fecha_venta, tipo_pago) VALUES (%s, %s)",
-                        (fecha_venta, tipo_pago)
+                        "INSERT INTO VENTA (fecha_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s)",
+                        (fecha_venta, tipo_pago, total_cantidad_vendida)
                     )
-                    id_venta = cursor.lastrowid  # obtener id generado
+                    id_venta = cursor.lastrowid
 
-                    # Insertar en PRODUCTOxVENTA y actualizar INVENTARIO FIFO
+                    # Insertar detalle y actualizar inventario FIFO
                     for p in productos_vender:
                         id_producto = p["id_producto"]
                         cantidad_vendida = p["cantidad"]
                         precio_unitario = p["precio_unitario"]
 
-                        # Insertar detalle producto x venta
                         cursor.execute(
                             "INSERT INTO PRODUCTOxVENTA (id_venta, id_producto, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
                             (id_venta, id_producto, cantidad_vendida, precio_unitario)
@@ -153,7 +154,6 @@ def mostrar_ventas():
 
                         restante = cantidad_vendida
 
-                        # Consultar inventario orden FIFO (por fecha_ingreso asc)
                         cursor.execute(
                             "SELECT ID_Inventario, Stock FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_ingreso ASC",
                             (id_producto,)
@@ -164,14 +164,12 @@ def mostrar_ventas():
                             if restante <= 0:
                                 break
                             if stock <= restante:
-                                # Agotamos este inventario
                                 cursor.execute(
                                     "UPDATE INVENTARIO SET Stock = 0, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
                                     (fecha_venta, stock, id_inventario)
                                 )
                                 restante -= stock
                             else:
-                                # Reducimos parcialmente el stock
                                 nuevo_stock = stock - restante
                                 cursor.execute(
                                     "UPDATE INVENTARIO SET Stock = %s, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
@@ -184,7 +182,6 @@ def mostrar_ventas():
 
                     con.commit()
                     st.success(f"✅ Venta registrada correctamente con ID: {id_venta}")
-                    # Resetear formulario
                     st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
                     st.session_state.contador_secciones = 1
                     st.rerun()
@@ -195,6 +192,7 @@ def mostrar_ventas():
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
+
     finally:
         if 'cursor' in locals():
             cursor.close()
