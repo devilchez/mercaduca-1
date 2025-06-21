@@ -4,13 +4,15 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("🧾 Registrar venta")
 
-    # Inicialización segura del estado
+    # Inicialización de estado
     if "secciones" not in st.session_state:
         st.session_state.secciones = []
     if "contador_secciones" not in st.session_state:
         st.session_state.contador_secciones = 0
     if "productos_vender" not in st.session_state:
         st.session_state.productos_vender = []
+    if "flag_agregado" not in st.session_state:
+        st.session_state.flag_agregado = False
 
     try:
         con = obtener_conexion()
@@ -28,28 +30,25 @@ def mostrar_ventas():
         for idp, nombre, precio, id_emp in productos:
             productos_por_emprendimiento.setdefault(id_emp, []).append((idp, nombre, precio))
 
-        # Botón para agregar una nueva sección de emprendimiento
-        if "flag_agregado" not in st.session_state:
-            st.session_state.flag_agregado = False
-
+        # Botón: marcar intención de agregar emprendimiento
         if st.button("➕ Agregar emprendimiento"):
-           st.session_state.flag_agregado = True
+            st.session_state.flag_agregado = True
             st.rerun()
 
-# Acción: solo se ejecuta en el rerun siguiente
+        # Acción: agregar sección solo si fue marcado
         if st.session_state.flag_agregado:
             st.session_state.secciones.append({
-            "id": st.session_state.contador_secciones,
-            "emprendimiento": None,
-            "productos": []
+                "id": st.session_state.contador_secciones,
+                "emprendimiento": None,
+                "productos": []
             })
             st.session_state.contador_secciones += 1
             st.session_state.flag_agregado = False
 
         total_general = 0
-        st.session_state.productos_vender = []  # Reiniciamos productos para no duplicar
+        st.session_state.productos_vender = []
 
-        # Mostrar cada sección
+        # Mostrar secciones de emprendimiento
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
@@ -67,17 +66,15 @@ def mostrar_ventas():
                     st.rerun()
                 continue
 
-            # Mostrar productos disponibles
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
             if not productos_disponibles:
                 st.warning("Este emprendimiento no tiene productos.")
                 continue
 
             opciones_dict = {
-                f"{nombre}": (idp, nombre, precio) for idp, nombre, precio in productos_disponibles
+                nombre: (idp, nombre, precio) for idp, nombre, precio in productos_disponibles
             }
             opciones_str = list(opciones_dict.keys())
-
             subtotal_emprendimiento = 0
 
             for i, _ in enumerate(seccion["productos"]):
@@ -114,20 +111,17 @@ def mostrar_ventas():
             st.markdown(f"🧮 Subtotal por emprendimiento #{sec_id + 1}: **${subtotal_emprendimiento:.2f}**")
             total_general += subtotal_emprendimiento
 
-            # Botón para agregar producto
             if st.button(f"➕ Agregar producto a emprendimiento #{sec_id + 1}", key=f"agrega_producto_{sec_id}"):
                 seccion["productos"].append({})
                 st.rerun()
 
-        # Total general
         if st.session_state.productos_vender:
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
-        # Tipo de pago al final
+        # Tipo de pago final
         tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
-        # Botón registrar venta
         if st.button("✅ Registrar venta"):
             if not st.session_state.productos_vender:
                 st.error("Debes seleccionar al menos un producto.")
@@ -162,7 +156,6 @@ def mostrar_ventas():
                         )
                     )
 
-                    # Descontar inventario FIFO
                     cantidad_restante = item["cantidad"]
                     cursor.execute(
                         "SELECT ID_Inventario, Stock FROM INVENTARIO "
