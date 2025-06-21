@@ -7,7 +7,6 @@ def mostrar_ventas():
     if "num_productos" not in st.session_state:
         st.session_state.num_productos = 1
 
-    # Conectarse a la base de datos
     try:
         con = obtener_conexion()
         cursor = con.cursor()
@@ -20,7 +19,6 @@ def mostrar_ventas():
             return
 
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
-
         emprend_sel = st.selectbox("Selecciona un emprendimiento", list(emprend_dict.keys()))
         id_emprendimiento = emprend_dict[emprend_sel]
 
@@ -42,11 +40,10 @@ def mostrar_ventas():
         }
 
         st.markdown("### Productos a vender")
-
-        # Formularios
         productos_vender = []
 
         with st.form("formulario_venta", clear_on_submit=False):
+            total_general = 0
             for i in range(st.session_state.num_productos):
                 st.markdown(f"#### Producto #{i+1}")
                 col1, col2 = st.columns(2)
@@ -61,12 +58,19 @@ def mostrar_ventas():
 
                 if producto_sel != "-- Selecciona --":
                     id_producto, precio_unitario = producto_dict[producto_sel]
+                    subtotal = cantidad * precio_unitario
+                    total_general += subtotal
                     productos_vender.append({
                         "id_producto": id_producto,
                         "precio_unitario": precio_unitario,
                         "cantidad": cantidad,
-                        "nombre": producto_sel.split(" ($")[0]
+                        "nombre": producto_sel.split(" ($")[0],
+                        "subtotal": subtotal
                     })
+                    st.markdown(f"**Subtotal:** ${subtotal:.2f}")
+
+            if productos_vender:
+                st.markdown(f"### 💵 Total a cobrar: **${total_general:.2f}**")
 
             tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
             col1, col2 = st.columns(2)
@@ -75,7 +79,7 @@ def mostrar_ventas():
 
         if agregar:
             st.session_state.num_productos += 1
-            st.experimental_rerun()
+            st.rerun()  # Corrección aquí
 
         if registrar:
             if not productos_vender:
@@ -99,14 +103,12 @@ def mostrar_ventas():
                 return
 
             try:
-                # Insertar la venta
                 cursor.execute(
                     "INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)",
                     (tipo_pago,)
                 )
                 id_venta = cursor.lastrowid
 
-                # Insertar productos y actualizar inventario (FIFO)
                 for item in productos_vender:
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
@@ -114,7 +116,6 @@ def mostrar_ventas():
                         (id_venta, item["id_producto"], item["cantidad"], item["precio_unitario"])
                     )
 
-                    # Descontar inventario
                     cantidad_restante = item["cantidad"]
                     cursor.execute(
                         "SELECT ID_Inventario, Stock FROM INVENTARIO "
@@ -138,7 +139,7 @@ def mostrar_ventas():
 
                 con.commit()
                 st.success("✅ Venta registrada correctamente.")
-                st.session_state.num_productos = 1  # Reiniciar el contador
+                st.session_state.num_productos = 1  # Reiniciar contador
 
             except Exception as e:
                 con.rollback()
@@ -150,4 +151,3 @@ def mostrar_ventas():
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
-
