@@ -51,7 +51,7 @@ def mostrar_ventas():
                 st.warning("Este emprendimiento no tiene productos.")
                 continue
 
-            opciones_str = [f"{nombre} (${precio:.2f})" for _, nombre, precio in productos_disponibles]
+            opciones_str = [f"{nombre} (ID: {idp}) - ${precio:.2f}" for idp, nombre, precio in productos_disponibles]
 
             for i in range(seccion["productos"]):
                 st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
@@ -71,6 +71,7 @@ def mostrar_ventas():
                         key=f"cantidad_{sec_id}_{i}"
                     )
 
+                # Verificar si el producto fue seleccionado correctamente
                 if prod_sel != "-- Selecciona --":
                     index = opciones_str.index(prod_sel)
                     id_producto, nombre_producto, precio_unitario = productos_disponibles[index]
@@ -119,6 +120,11 @@ def mostrar_ventas():
                 id_venta = cursor.lastrowid
 
                 for item in productos_vender:
+                    # Verificar que el producto tenga un ID correcto antes de insertarlo
+                    if item["id_producto"] is None:
+                        st.error(f"❌ Producto '{item['nombre']}' no tiene ID válido.")
+                        return
+                    
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
                         "VALUES (%s, %s, %s, %s)",
