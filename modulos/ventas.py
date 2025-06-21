@@ -2,12 +2,12 @@ import streamlit as st
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_ventas():
-    st.header("Registrar venta")
+    st.header("🧾 Registrar venta")
 
     if "initialized" not in st.session_state:
-        st.session_state.secciones = [{"id": 0, "productos": 1}]
-        st.session_state.contador_secciones = 1
-        st.session_state.emprendimientos_seleccionados = {}
+        st.session_state.secciones = []
+        st.session_state.contador_secciones = 0
+        st.session_state.productos_vender = []
         st.session_state.initialized = True
 
     try:
@@ -26,40 +26,45 @@ def mostrar_ventas():
         for idp, nombre, precio, id_emp in productos:
             productos_por_emprendimiento.setdefault(id_emp, []).append((idp, nombre, precio))
 
-        total_general = 0
-        productos_vender = []
+        # Agregar nueva sección de emprendimiento
+        if st.button("➕ Agregar emprendimiento"):
+            st.session_state.secciones.append({
+                "id": st.session_state.contador_secciones,
+                "emprendimiento": None,
+                "productos": []
+            })
+            st.session_state.contador_secciones += 1
+            st.experimental_rerun()
 
+        total_general = 0
+
+        # Mostrar cada sección (emprendimiento con sus productos)
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
-            emp_sel = st.selectbox(
-                f"Selecciona un emprendimiento (sección {sec_id + 1})",
-                ["-- Selecciona --"] + list(emprend_dict.keys()),
-                key=f"emprend_{sec_id}"
-            )
+            if seccion["emprendimiento"] is None:
+                emp_sel = st.selectbox(
+                    f"Selecciona un emprendimiento (sección {sec_id + 1})",
+                    ["-- Selecciona --"] + list(emprend_dict.keys()),
+                    key=f"emprend_{sec_id}"
+                )
 
-            if emp_sel == "-- Selecciona --":
+                if emp_sel != "-- Selecciona --":
+                    seccion["emprendimiento"] = emprend_dict[emp_sel]
+                    st.experimental_rerun()
                 continue
 
-            id_emp = emprend_dict[emp_sel]
-            st.session_state.emprendimientos_seleccionados[sec_id] = id_emp
-
+            # Mostrar productos de ese emprendimiento
+            id_emp = seccion["emprendimiento"]
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
-            if not productos_disponibles:
-                st.warning("Este emprendimiento no tiene productos.")
-                continue
-
-            opciones_dict = {
-                f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, nombre, precio)
-                for idp, nombre, precio in productos_disponibles
-            }
+            opciones_dict = {f"{nombre}": (idp, nombre, precio) for idp, nombre, precio in productos_disponibles}
             opciones_str = list(opciones_dict.keys())
 
-            for i in range(seccion["productos"]):
-                st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
-                col1, col2 = st.columns(2)
+            subtotal_emprendimiento = 0
 
+            for i, prod in enumerate(seccion["productos"]):
+                col1, col2 = st.columns(2)
                 with col1:
                     prod_sel = st.selectbox(
                         f"Producto {i + 1} (sección {sec_id + 1})",
@@ -76,47 +81,42 @@ def mostrar_ventas():
 
                 if prod_sel in opciones_dict:
                     id_producto, nombre_producto, precio_unitario = opciones_dict[prod_sel]
+                    subtotal = cantidad * precio_unitario
+                    subtotal_emprendimiento += subtotal
 
-                    if id_producto:  # Validación fuerte
-                        subtotal = cantidad * precio_unitario
-                        total_general += subtotal
-                        productos_vender.append({
-                            "id_producto": id_producto,
-                            "precio_unitario": precio_unitario,
-                            "cantidad": cantidad,
-                            "nombre": nombre_producto
-                        })
-                        st.caption(f"🆔 Código del producto: `{id_producto}`")
-                        st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
+                    st.caption(f"🆔 Código del producto: `{id_producto}`")
+                    st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
 
-            if st.button(f"➕ Agregar otro producto a {emp_sel}", key=f"agrega_{sec_id}"):
-                seccion["productos"] += 1
-                st.rerun()
+                    st.session_state.productos_vender.append({
+                        "id_producto": id_producto,
+                        "precio_unitario": precio_unitario,
+                        "cantidad": cantidad,
+                        "nombre": nombre_producto
+                    })
 
-        if productos_vender:
+            st.markdown(f"🧮 Subtotal por emprendimiento #{sec_id + 1}: **${subtotal_emprendimiento:.2f}**")
+            total_general += subtotal_emprendimiento
+
+            if st.button(f"➕ Agregar producto a emprendimiento #{sec_id + 1}", key=f"add_prod_{sec_id}"):
+                seccion["productos"].append({})
+                st.experimental_rerun()
+
+        # Mostrar total general
+        if st.session_state.productos_vender:
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
-        col1, col2 = st.columns(2)
-        if col1.button("➕ Agregar otro emprendimiento"):
-            st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
-            st.session_state.contador_secciones += 1
-            st.rerun()
+        # Tipo de pago
+        tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
-        if col2.button("✅ Registrar venta"):
-            if not productos_vender:
+        # Botón para registrar venta
+        if st.button("✅ Registrar venta"):
+            if not st.session_state.productos_vender:
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
-            st.markdown("### 🔍 Depuración antes del insert:")
-            for item in productos_vender:
-                st.write("Producto a registrar:", item)
-                if not item["id_producto"]:
-                    st.error(f"⛔ Error: Producto sin ID. Detalle: {item}")
-                    return
-
             errores = []
-            for item in productos_vender:
+            for item in st.session_state.productos_vender:
                 cursor.execute("SELECT SUM(Stock) FROM INVENTARIO WHERE ID_Producto = %s", (item["id_producto"],))
                 resultado = cursor.fetchone()
                 stock_disponible = int(resultado[0]) if resultado and resultado[0] else 0
@@ -129,19 +129,24 @@ def mostrar_ventas():
                 return
 
             try:
-                cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", ("Efectivo",))
+                # Insertar la venta
+                cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", (tipo_pago,))
                 id_venta = cursor.lastrowid
 
-                for item in productos_vender:
-                    if not item["id_producto"]:
-                        raise Exception("⛔ Intento de insertar producto con ID vacío.")
-
+                # Insertar productos
+                for item in st.session_state.productos_vender:
                     cursor.execute(
-                        "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
+                        "INSERT INTO PRODUCTOXVENTA (id_venta, ID_Producto, Cantidad, Precio_unitario) "
                         "VALUES (%s, %s, %s, %s)",
-                        (id_venta, item["id_producto"], item["cantidad"], item["precio_unitario"])
+                        (
+                            id_venta,
+                            str(item["id_producto"]),
+                            int(item["cantidad"]),
+                            float(item["precio_unitario"])
+                        )
                     )
 
+                    # Descontar inventario con FIFO
                     cantidad_restante = item["cantidad"]
                     cursor.execute(
                         "SELECT ID_Inventario, Stock FROM INVENTARIO "
