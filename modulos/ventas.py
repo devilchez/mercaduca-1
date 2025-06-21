@@ -6,8 +6,7 @@ def mostrar_ventas():
 
     if "initialized" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
-        st.session_state.contador_secciones = 1
-        st.session_state.initialized = True
+
 
     try:
         con = obtener_conexion()
