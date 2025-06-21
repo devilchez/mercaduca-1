@@ -7,7 +7,6 @@ def mostrar_ventas():
     if "initialized" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
         st.session_state.contador_secciones = 1
-        st.session_state.emprendimientos_seleccionados = {}
         st.session_state.initialized = True
 
     try:
@@ -29,9 +28,9 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
-        # Variable para el tipo de pago
         tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
+        # Mostrar solo un formulario por vez
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
