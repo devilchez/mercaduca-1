@@ -108,8 +108,12 @@ def mostrar_ventas():
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
-            # Verificar que los productos tienen el ID_Producto correctamente
+            # **Depuración**: Verifica los valores de los productos antes del insert
             st.markdown("### 🔍 Depuración antes del insert:")
+            for item in productos_vender:
+                st.write(f"Producto a registrar: {item}")
+
+            # Verificación de que los valores no sean nulos o vacíos
             for item in productos_vender:
                 if not item["id_producto"]:
                     st.error(f"⛔ Error: Producto sin ID. Detalle: {item}")
@@ -132,11 +136,14 @@ def mostrar_ventas():
                 # 1. Insertar la venta
                 cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", ("Efectivo",))
                 id_venta = cursor.lastrowid  # Obtener el ID de la venta recién insertada
+                st.write(f"ID de la venta: {id_venta}")  # Depuración: Ver el ID de venta generado
 
                 # 2. Insertar productos en PRODUCTOXVENTA con id_venta
                 for item in productos_vender:
                     if not item["id_producto"]:
                         raise Exception("⛔ Intento de insertar producto con ID vacío.")
+
+                    st.write(f"Inserción en PRODUCTOXVENTA: {item['id_producto']}, {item['cantidad']}, {item['precio_unitario']}")  # Depuración
 
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (id_venta, ID_Producto, Cantidad, Precio_unitario) "
