@@ -31,8 +31,7 @@ def mostrar_ventas():
         tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
         # Mostrar solo un formulario por vez
-        for seccion in st.session_state.secciones:
-            sec_id = seccion["id"]
+        for sec_id, seccion in enumerate(st.session_state.secciones):
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
             emp_sel = st.selectbox(
@@ -95,8 +94,8 @@ def mostrar_ventas():
                         st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
 
             if st.button(f"➕ Agregar otro producto a {emp_sel}", key=f"agrega_{sec_id}"):
-                seccion["productos"] += 1
-                st.experimental_rerun()
+                st.session_state.secciones[sec_id]["productos"] += 1
+                break  # Terminar el ciclo de la sección para agregar más productos
 
         if productos_vender:
             st.markdown("---")
@@ -106,7 +105,6 @@ def mostrar_ventas():
         if col1.button("➕ Agregar otro emprendimiento"):
             st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
             st.session_state.contador_secciones += 1
-            st.experimental_rerun()
 
         if col2.button("✅ Registrar venta"):
             if not productos_vender:
