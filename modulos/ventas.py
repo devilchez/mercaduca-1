@@ -19,75 +19,76 @@ def mostrar_ventas():
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
+        # Mostrar lista de emprendimientos solo una vez
+        if not st.session_state.emprendimientos:
+            emprend_sel = st.selectbox("Selecciona un emprendimiento", list(emprend_dict.keys()))
+            if emprend_sel != "-- Selecciona --":
+                st.session_state.emprendimientos.append(emprend_sel)
+        else:
+            emprend_sel = st.session_state.emprendimientos[0]  # Solo un emprendimiento por ahora
+
         # Cargar productos por emprendimiento
-        cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
+        cursor.execute("""SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento 
+                          FROM PRODUCTO WHERE ID_Emprendimiento = %s""", (emprend_dict[emprend_sel],))
         productos = cursor.fetchall()
-        productos_por_emprendimiento = {}
-        for idp, nombre, precio, id_emp in productos:
-            productos_por_emprendimiento.setdefault(id_emp, []).append((idp, nombre, precio))
 
-        # Mostrar tipo de pago
-        tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
+        productos_dict = {f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, nombre, precio) for idp, nombre, precio in productos}
+        opciones_str = list(productos_dict.keys())
 
-        # Mostrar los formularios de productos por cada emprendimiento
-        for i, emp_sel in enumerate(st.session_state.emprendimientos):
-            st.subheader(f"🧩 Emprendimiento #{i + 1}: {emp_sel}")
+        # Mostrar productos disponibles para este emprendimiento
+        st.markdown("### Productos a vender")
 
-            # Selección del emprendimiento
-            emp_id = emprend_dict[emp_sel]
-            productos_disponibles = productos_por_emprendimiento.get(emp_id, [])
+        productos_vender = []
 
-            # Si no hay productos para este emprendimiento, mostrar mensaje
-            if not productos_disponibles:
-                st.warning(f"No hay productos disponibles para {emp_sel}.")
-                continue
-
-            # Mostrar productos disponibles para este emprendimiento
-            opciones_dict = {f"{nombre}": (idp, precio) for idp, nombre, precio in productos_disponibles}
-            opciones_str = list(opciones_dict.keys())
-
-            for j in range(len(st.session_state.productos[i])):
+        # Formulario de productos
+        with st.form("formulario_venta", clear_on_submit=False):
+            for i in range(len(st.session_state.productos)):
+                st.markdown(f"#### Producto #{i+1}")
                 col1, col2 = st.columns(2)
                 with col1:
                     producto_sel = st.selectbox(
-                        f"Producto {j + 1}",
+                        f"Producto {i+1}",
                         ["-- Selecciona --"] + opciones_str,
-                        key=f"producto_{i}_{j}"
+                        key=f"producto_{i}"
                     )
                 with col2:
-                    cantidad = st.number_input(f"Cantidad {j + 1}", min_value=1, key=f"cantidad_{i}_{j}")
+                    cantidad = st.number_input(f"Cantidad {i+1}", min_value=1, key=f"cantidad_{i}")
 
                 if producto_sel != "-- Selecciona --":
-                    id_producto, precio_unitario = opciones_dict[producto_sel]
+                    id_producto, nombre_producto, precio_unitario = productos_dict[producto_sel]
                     subtotal = cantidad * precio_unitario
-                    st.session_state.productos[i][j] = {
+                    productos_vender.append({
                         "id_producto": id_producto,
+                        "nombre_producto": nombre_producto,
                         "precio_unitario": precio_unitario,
                         "cantidad": cantidad,
                         "subtotal": subtotal
-                    }
+                    })
                     st.caption(f"🆔 Código del producto: `{id_producto}`")
                     st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
 
-        # Total general
-        total_general = sum([producto['subtotal'] for emprendimiento in st.session_state.productos for producto in emprendimiento])
+            # Total general de la venta
+            total_general = sum([producto['subtotal'] for producto in productos_vender])
+            st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
-        st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
+            tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
-        # Botones para agregar productos y emprendimientos
-        col1, col2 = st.columns(2)
-        if col1.button("➕ Agregar otro emprendimiento"):
-            st.session_state.emprendimientos.append("-- Selecciona --")
-            st.session_state.productos.append([])
-        if col2.button("✅ Registrar venta"):
-            # Registrar la venta y los productos
-            try:
-                cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", (tipo_pago,))
-                id_venta = cursor.lastrowid
+            # Botones para agregar productos o registrar la venta
+            col1, col2 = st.columns(2)
+            if col1.button("➕ Agregar producto"):
+                st.session_state.productos.append({})
+            if col2.button("✅ Registrar venta"):
+                if not productos_vender:
+                    st.error("Debes seleccionar al menos un producto.")
+                    return
 
-                # Insertar productos en PRODUCTOXVENTA
-                for emprendimiento in st.session_state.productos:
-                    for producto in emprendimiento:
+                # Registrar la venta
+                try:
+                    cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", (tipo_pago,))
+                    id_venta = cursor.lastrowid
+
+                    # Insertar productos en PRODUCTOXVENTA
+                    for producto in productos_vender:
                         cursor.execute(
                             "INSERT INTO PRODUCTOXVENTA (id_venta, ID_Producto, Cantidad, Precio_unitario) "
                             "VALUES (%s, %s, %s, %s)",
@@ -99,13 +100,13 @@ def mostrar_ventas():
                             )
                         )
 
-                con.commit()
-                st.success("✅ Venta registrada correctamente.")
-                st.session_state.clear()
+                    con.commit()
+                    st.success("✅ Venta registrada correctamente.")
+                    st.session_state.productos = []  # Reiniciar productos
 
-            except Exception as e:
-                con.rollback()
-                st.error(f"❌ Error al registrar venta: {e}")
+                except Exception as e:
+                    con.rollback()
+                    st.error(f"❌ Error al registrar venta: {e}")
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
