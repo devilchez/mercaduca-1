@@ -17,6 +17,11 @@ def mostrar_ventas():
         # Cargar emprendimientos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
+
+        if not emprendimientos:
+            st.error("No hay emprendimientos registrados.")
+            return
+
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
         # Mostrar lista de emprendimientos solo una vez
@@ -26,6 +31,11 @@ def mostrar_ventas():
                 st.session_state.emprendimientos.append(emprend_sel)
         else:
             emprend_sel = st.session_state.emprendimientos[0]  # Solo un emprendimiento por ahora
+
+        # Si no se seleccionó un emprendimiento, mostrar un mensaje de advertencia
+        if not emprend_sel or emprend_sel == "-- Selecciona --":
+            st.warning("Por favor, selecciona un emprendimiento para continuar.")
+            return
 
         # Cargar productos por emprendimiento
         cursor.execute("""SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento 
