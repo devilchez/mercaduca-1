@@ -29,22 +29,22 @@ def mostrar_ventas():
             productos_por_emprendimiento.setdefault(id_emp, []).append((idp, nombre, precio))
 
         # Botón para agregar una nueva sección de emprendimiento
-        if "add_emprendimiento" not in st.session_state:
-            st.session_state.add_emprendimiento = False
+        if "flag_agregado" not in st.session_state:
+            st.session_state.flag_agregado = False
 
         if st.button("➕ Agregar emprendimiento"):
-            st.session_state.add_emprendimiento = True
-
-        if st.session_state.add_emprendimiento:
-            st.session_state.secciones.append({
-                "id": st.session_state.contador_secciones,
-                "emprendimiento": None,
-                "productos": []
-            })
-            st.session_state.contador_secciones += 1
-            st.session_state.add_emprendimiento = False
+           st.session_state.flag_agregado = True
             st.rerun()
 
+# Acción: solo se ejecuta en el rerun siguiente
+        if st.session_state.flag_agregado:
+            st.session_state.secciones.append({
+            "id": st.session_state.contador_secciones,
+            "emprendimiento": None,
+            "productos": []
+            })
+            st.session_state.contador_secciones += 1
+            st.session_state.flag_agregado = False
 
         total_general = 0
         st.session_state.productos_vender = []  # Reiniciamos productos para no duplicar
