@@ -4,22 +4,23 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("Registrar venta")
 
-    # Solo inicializa una vez con 1 sección y 1 producto
+    # Inicialización
     if "initialized" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
         st.session_state.contador_secciones = 1
         st.session_state.emprendimientos_seleccionados = {}
-        st.session_state.initialized = True  # evita que se reinicie al rerun
+        st.session_state.initialized = True
 
     try:
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener emprendimientos y productos
+        # Obtener emprendimientos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
+        # Obtener productos
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
@@ -31,49 +32,46 @@ def mostrar_ventas():
 
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
-            st.subheader(f"Emprendimiento #{sec_id + 1}")
+            st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
-    # ✅ Mostrar emprendimiento una sola vez por sección
-    emp_sel = st.selectbox(
-        f"Selecciona un emprendimiento (sección {sec_id + 1})",
-        ["-- Selecciona --"] + list(emprend_dict.keys()),
-        key=f"emprend_{sec_id}"
-    )
-
-    if emp_sel == "-- Selecciona --":
-        continue
-
-    id_emp = emprend_dict[emp_sel]
-    st.session_state.emprendimientos_seleccionados[sec_id] = id_emp
-    productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
-
-    if not productos_disponibles:
-        st.warning("Este emprendimiento no tiene productos.")
-        continue
-
-    opciones_str = [f"{nombre} (ID: {idp}) - ${precio:.2f}" for idp, nombre, precio in productos_disponibles]
-
-    # ✅ Mostrar solo los productos
-    for i in range(seccion["productos"]):
-        st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
-        col1, col2 = st.columns(2)
-
-        with col1:
-            prod_sel = st.selectbox(
-                f"Producto {i + 1} (sección {sec_id + 1})",
-                ["-- Selecciona --"] + opciones_str,
-                key=f"producto_{sec_id}_{i}"
-            )
-        with col2:
-            cantidad = st.number_input(
-                f"Cantidad {i + 1} (sección {sec_id + 1})",
-                min_value=1,
-                step=1,
-                key=f"cantidad_{sec_id}_{i}"
+            # Selector de emprendimiento (solo uno por sección)
+            emp_sel = st.selectbox(
+                f"Selecciona un emprendimiento (sección {sec_id + 1})",
+                ["-- Selecciona --"] + list(emprend_dict.keys()),
+                key=f"emprend_{sec_id}"
             )
 
+            if emp_sel == "-- Selecciona --":
+                continue
 
-                # Verificar si el producto fue seleccionado correctamente
+            id_emp = emprend_dict[emp_sel]
+            st.session_state.emprendimientos_seleccionados[sec_id] = id_emp
+
+            productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
+            if not productos_disponibles:
+                st.warning("Este emprendimiento no tiene productos.")
+                continue
+
+            opciones_str = [f"{nombre} (ID: {idp}) - ${precio:.2f}" for idp, nombre, precio in productos_disponibles]
+
+            for i in range(seccion["productos"]):
+                st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    prod_sel = st.selectbox(
+                        f"Producto {i + 1} (sección {sec_id + 1})",
+                        ["-- Selecciona --"] + opciones_str,
+                        key=f"producto_{sec_id}_{i}"
+                    )
+                with col2:
+                    cantidad = st.number_input(
+                        f"Cantidad {i + 1} (sección {sec_id + 1})",
+                        min_value=1,
+                        step=1,
+                        key=f"cantidad_{sec_id}_{i}"
+                    )
+
                 if prod_sel != "-- Selecciona --":
                     index = opciones_str.index(prod_sel)
                     id_producto, nombre_producto, precio_unitario = productos_disponibles[index]
@@ -85,14 +83,20 @@ def mostrar_ventas():
                         "cantidad": cantidad,
                         "nombre": nombre_producto
                     })
-                    st.markdown(f"Subtotal: **${subtotal:.2f}**")
+                    st.caption(f"🆔 Código: `{id_producto}`")
+                    st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
 
+            # Botón para agregar más productos dentro del mismo emprendimiento
             if st.button(f"➕ Agregar otro producto a {emp_sel}", key=f"agrega_{sec_id}"):
                 seccion["productos"] += 1
                 st.rerun()
 
-        st.markdown(f"### 💰 Total general: **${total_general:.2f}**" if productos_vender else "")
+        # Mostrar total general si hay productos
+        if productos_vender:
+            st.markdown("---")
+            st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
+        # Botones generales
         col1, col2 = st.columns(2)
         if col1.button("➕ Agregar otro emprendimiento"):
             st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
@@ -104,6 +108,7 @@ def mostrar_ventas():
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
+            # Validación de stock
             errores = []
             for item in productos_vender:
                 cursor.execute("SELECT SUM(Stock) FROM INVENTARIO WHERE ID_Producto = %s", (item["id_producto"],))
@@ -117,16 +122,12 @@ def mostrar_ventas():
                     st.error(err)
                 return
 
+            # Registro en base de datos
             try:
                 cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", ("Efectivo",))
                 id_venta = cursor.lastrowid
 
                 for item in productos_vender:
-                    # Verificar que el producto tenga un ID correcto antes de insertarlo
-                    if item["id_producto"] is None:
-                        st.error(f"❌ Producto '{item['nombre']}' no tiene ID válido.")
-                        return
-                    
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
                         "VALUES (%s, %s, %s, %s)",
@@ -153,7 +154,7 @@ def mostrar_ventas():
 
                 con.commit()
                 st.success("✅ Venta registrada exitosamente.")
-                st.session_state.clear()
+                st.session_state.clear()  # Reiniciar todo
 
             except Exception as e:
                 con.rollback()
@@ -161,7 +162,6 @@ def mostrar_ventas():
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
-
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
