@@ -4,7 +4,6 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("Registrar venta")
 
-    # Inicializar estados
     if "initialized" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
         st.session_state.contador_secciones = 1
@@ -78,7 +77,7 @@ def mostrar_ventas():
                 if prod_sel in opciones_dict:
                     id_producto, nombre_producto, precio_unitario = opciones_dict[prod_sel]
 
-                    if id_producto:  # Seguridad adicional
+                    if id_producto:  # Validación fuerte
                         subtotal = cantidad * precio_unitario
                         total_general += subtotal
                         productos_vender.append({
@@ -109,12 +108,15 @@ def mostrar_ventas():
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
+            st.markdown("### 🔍 Depuración antes del insert:")
+            for item in productos_vender:
+                st.write("Producto a registrar:", item)
+                if not item["id_producto"]:
+                    st.error(f"⛔ Error: Producto sin ID. Detalle: {item}")
+                    return
+
             errores = []
             for item in productos_vender:
-                if not item["id_producto"]:  # Validación fuerte
-                    errores.append(f"Producto no válido: ID vacío.")
-                    continue
-
                 cursor.execute("SELECT SUM(Stock) FROM INVENTARIO WHERE ID_Producto = %s", (item["id_producto"],))
                 resultado = cursor.fetchone()
                 stock_disponible = int(resultado[0]) if resultado and resultado[0] else 0
@@ -132,8 +134,8 @@ def mostrar_ventas():
 
                 for item in productos_vender:
                     if not item["id_producto"]:
-                        raise Exception("Error: intento de insertar producto sin ID.")
-                    
+                        raise Exception("⛔ Intento de insertar producto con ID vacío.")
+
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
                         "VALUES (%s, %s, %s, %s)",
@@ -160,7 +162,7 @@ def mostrar_ventas():
 
                 con.commit()
                 st.success("✅ Venta registrada correctamente.")
-                st.session_state.clear()  # Reiniciar app
+                st.session_state.clear()
 
             except Exception as e:
                 con.rollback()
