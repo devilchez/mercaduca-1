@@ -12,7 +12,7 @@ st.set_page_config(page_title="MERCADUCA", layout="centered")
 
 # 🔐 Control de sesión
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
-login() # Mostrar login si no hay sesión iniciada
+   login() # Mostrar login si no hay sesión iniciada
 else:
 tipo = st.session_state["tipo_usuario"]
     
