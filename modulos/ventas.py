@@ -4,11 +4,6 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("Registrar venta")
 
-    # Inicializar el estado de la sesión
-    if "productos" not in st.session_state:
-        st.session_state.productos = []  # Lista de productos seleccionados
-        st.session_state.emprendimientos = []  # Lista de emprendimientos seleccionados
-
     # Conexión a la base de datos
     try:
         con = obtener_conexion()
@@ -24,33 +19,37 @@ def mostrar_ventas():
 
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        # Mostrar lista de emprendimientos solo una vez
-        if not st.session_state.emprendimientos:
-            emprend_sel = st.selectbox("Selecciona un emprendimiento", list(emprend_dict.keys()))
-            if emprend_sel != "-- Selecciona --":
-                st.session_state.emprendimientos.append(emprend_sel)
-        else:
-            emprend_sel = st.session_state.emprendimientos[0]  # Solo un emprendimiento por ahora
+        # Selección del emprendimiento
+        emprend_sel = st.selectbox("Selecciona un emprendimiento", ["-- Selecciona --"] + list(emprend_dict.keys()))
 
-        # Si no se seleccionó un emprendimiento, mostrar un mensaje de advertencia
-        if not emprend_sel or emprend_sel == "-- Selecciona --":
+        # Si no se ha seleccionado un emprendimiento, no procesar
+        if emprend_sel == "-- Selecciona --":
             st.warning("Por favor, selecciona un emprendimiento para continuar.")
             return
 
-        # Cargar productos por emprendimiento
-        cursor.execute("""SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento 
-                          FROM PRODUCTO WHERE ID_Emprendimiento = %s""", (emprend_dict[emprend_sel],))
+        # Registrar emprendimiento en la sesión
+        st.session_state.emprendimiento_seleccionado = emprend_sel
+        id_emprendimiento = emprend_dict[emprend_sel]
+
+        # Cargar productos para el emprendimiento seleccionado
+        cursor.execute("""
+            SELECT ID_Producto, Nombre_producto, Precio 
+            FROM PRODUCTO 
+            WHERE ID_Emprendimiento = %s
+        """, (id_emprendimiento,))
         productos = cursor.fetchall()
 
-        productos_dict = {f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, nombre, precio) for idp, nombre, precio in productos}
-        opciones_str = list(productos_dict.keys())
+        if not productos:
+            st.warning(f"No hay productos registrados para el emprendimiento '{emprend_sel}'.")
+            return
 
-        # Mostrar productos disponibles para este emprendimiento
+        productos_dict = {f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, precio) for idp, nombre, precio in productos}
+
         st.markdown("### Productos a vender")
 
         productos_vender = []
 
-        # Formulario de productos
+        # Formulario para productos
         with st.form("formulario_venta", clear_on_submit=False):
             for i in range(len(st.session_state.productos)):
                 st.markdown(f"#### Producto #{i+1}")
@@ -58,18 +57,17 @@ def mostrar_ventas():
                 with col1:
                     producto_sel = st.selectbox(
                         f"Producto {i+1}",
-                        ["-- Selecciona --"] + opciones_str,
+                        ["-- Selecciona --"] + list(productos_dict.keys()),
                         key=f"producto_{i}"
                     )
                 with col2:
                     cantidad = st.number_input(f"Cantidad {i+1}", min_value=1, key=f"cantidad_{i}")
 
                 if producto_sel != "-- Selecciona --":
-                    id_producto, nombre_producto, precio_unitario = productos_dict[producto_sel]
+                    id_producto, precio_unitario = productos_dict[producto_sel]
                     subtotal = cantidad * precio_unitario
                     productos_vender.append({
                         "id_producto": id_producto,
-                        "nombre_producto": nombre_producto,
                         "precio_unitario": precio_unitario,
                         "cantidad": cantidad,
                         "subtotal": subtotal
