@@ -4,7 +4,7 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("Registrar venta")
 
-    # Inicialización
+    # Inicializar estados
     if "initialized" not in st.session_state:
         st.session_state.secciones = [{"id": 0, "productos": 1}]
         st.session_state.contador_secciones = 1
@@ -15,12 +15,12 @@ def mostrar_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener emprendimientos
+        # Cargar emprendimientos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        # Obtener productos
+        # Cargar productos
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
@@ -34,7 +34,6 @@ def mostrar_ventas():
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
-            # Selector de emprendimiento
             emp_sel = st.selectbox(
                 f"Selecciona un emprendimiento (sección {sec_id + 1})",
                 ["-- Selecciona --"] + list(emprend_dict.keys()),
@@ -52,7 +51,6 @@ def mostrar_ventas():
                 st.warning("Este emprendimiento no tiene productos.")
                 continue
 
-            # Usar diccionario para evitar errores de index
             opciones_dict = {
                 f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, nombre, precio)
                 for idp, nombre, precio in productos_disponibles
@@ -77,30 +75,29 @@ def mostrar_ventas():
                         key=f"cantidad_{sec_id}_{i}"
                     )
 
-                if prod_sel != "-- Selecciona --":
+                if prod_sel in opciones_dict:
                     id_producto, nombre_producto, precio_unitario = opciones_dict[prod_sel]
-                    subtotal = cantidad * precio_unitario
-                    total_general += subtotal
-                    productos_vender.append({
-                        "id_producto": id_producto,
-                        "precio_unitario": precio_unitario,
-                        "cantidad": cantidad,
-                        "nombre": nombre_producto
-                    })
-                    st.caption(f"🆔 Código del producto: `{id_producto}`")
-                    st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
 
-            # Botón para agregar más productos al mismo emprendimiento
+                    if id_producto:  # Seguridad adicional
+                        subtotal = cantidad * precio_unitario
+                        total_general += subtotal
+                        productos_vender.append({
+                            "id_producto": id_producto,
+                            "precio_unitario": precio_unitario,
+                            "cantidad": cantidad,
+                            "nombre": nombre_producto
+                        })
+                        st.caption(f"🆔 Código del producto: `{id_producto}`")
+                        st.markdown(f"💵 Subtotal: **${subtotal:.2f}**")
+
             if st.button(f"➕ Agregar otro producto a {emp_sel}", key=f"agrega_{sec_id}"):
                 seccion["productos"] += 1
                 st.rerun()
 
-        # Mostrar total general si hay productos
         if productos_vender:
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
-        # Botones generales
         col1, col2 = st.columns(2)
         if col1.button("➕ Agregar otro emprendimiento"):
             st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
@@ -112,9 +109,12 @@ def mostrar_ventas():
                 st.error("Debes seleccionar al menos un producto.")
                 return
 
-            # Verificar stock disponible
             errores = []
             for item in productos_vender:
+                if not item["id_producto"]:  # Validación fuerte
+                    errores.append(f"Producto no válido: ID vacío.")
+                    continue
+
                 cursor.execute("SELECT SUM(Stock) FROM INVENTARIO WHERE ID_Producto = %s", (item["id_producto"],))
                 resultado = cursor.fetchone()
                 stock_disponible = int(resultado[0]) if resultado and resultado[0] else 0
@@ -131,6 +131,9 @@ def mostrar_ventas():
                 id_venta = cursor.lastrowid
 
                 for item in productos_vender:
+                    if not item["id_producto"]:
+                        raise Exception("Error: intento de insertar producto sin ID.")
+                    
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
                         "VALUES (%s, %s, %s, %s)",
@@ -156,8 +159,8 @@ def mostrar_ventas():
                         cantidad_restante -= a_restar
 
                 con.commit()
-                st.success("✅ Venta registrada exitosamente.")
-                st.session_state.clear()  # Reiniciar todo
+                st.success("✅ Venta registrada correctamente.")
+                st.session_state.clear()  # Reiniciar app
 
             except Exception as e:
                 con.rollback()
@@ -165,6 +168,7 @@ def mostrar_ventas():
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
+
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
