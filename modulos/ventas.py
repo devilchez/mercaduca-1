@@ -4,18 +4,14 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("🧾 Registrar venta")
 
-    # Inicialización del estado si no existe
+    # Inicializar estado solo si no existe
     if "secciones" not in st.session_state:
-        # Una sección por defecto con 1 producto inicial vacío
         st.session_state.secciones = [{
             "id": 0,
             "emprendimiento": None,
             "productos": [{"producto": None, "cantidad": 1}]
         }]
         st.session_state.contador_secciones = 1
-
-    def recargar():
-        st.rerun()
 
     try:
         con = obtener_conexion()
@@ -26,7 +22,7 @@ def mostrar_ventas():
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        # Obtener productos y agrupar por emprendimiento
+        # Obtener productos por emprendimiento
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
@@ -40,12 +36,17 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
-        # Renderizar cada sección
+        # Función para actualizar estado y parar renderizado para refrescar
+        def actualizar_y_return():
+            st.experimental_set_query_params()  # Solo para actualizar URL y forzar refresh (opcional)
+            return
+
+        # Renderizar secciones una a una
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
-            # Selección del emprendimiento (solo 1 por sección)
+            # Opciones emprendimiento + índice seleccionado
             opciones_emprendimiento = ["-- Selecciona --"] + list(emprend_dict.keys())
             idx_emp_sel = 0
             if seccion["emprendimiento"]:
@@ -53,6 +54,7 @@ def mostrar_ventas():
                 if nombre_emp in opciones_emprendimiento:
                     idx_emp_sel = opciones_emprendimiento.index(nombre_emp)
 
+            # Selector emprendimiento (único por sección)
             emprendimiento_sel = st.selectbox(
                 "Selecciona un emprendimiento",
                 opciones_emprendimiento,
@@ -64,13 +66,18 @@ def mostrar_ventas():
                 seccion["emprendimiento"] = None
                 seccion["productos"] = []
                 st.info("Selecciona un emprendimiento para agregar productos.")
+                # Aquí no continuamos con productos para esta sección
                 continue
             else:
-                seccion["emprendimiento"] = emprend_dict[emprendimiento_sel]
+                # Guardar selección en estado
+                if seccion["emprendimiento"] != emprend_dict[emprendimiento_sel]:
+                    seccion["emprendimiento"] = emprend_dict[emprendimiento_sel]
+                    # Reset productos porque cambió emprendimiento
+                    seccion["productos"] = [{"producto": None, "cantidad": 1}]
+                    # Forzamos refresco para evitar renderizados extra con valores inconsistentes
+                    return
 
             id_emp = seccion["emprendimiento"]
-
-            # Productos disponibles para este emprendimiento
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
 
             if not productos_disponibles:
@@ -80,11 +87,11 @@ def mostrar_ventas():
 
             opciones_productos = ["-- Selecciona --"] + [p["nombre"] for p in productos_disponibles]
 
-            # Asegurar que haya al menos un producto para mostrar
+            # Asegurar al menos un producto para mostrar
             if len(seccion["productos"]) == 0:
                 seccion["productos"].append({"producto": None, "cantidad": 1})
 
-            # Renderizar productos dentro de la sección
+            # Renderizar productos (listas desplegables dentro de la sección)
             for i, prod in enumerate(seccion["productos"]):
                 if not isinstance(prod, dict):
                     seccion["productos"][i] = {"producto": None, "cantidad": 1}
@@ -120,10 +127,10 @@ def mostrar_ventas():
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
 
-            # Botón para agregar producto a esta sección
+            # Botón para agregar producto dentro de la sección
             if st.button(f"➕ Agregar producto a emprendimiento #{sec_id + 1}", key=f"add_prod_{sec_id}"):
                 seccion["productos"].append({"producto": None, "cantidad": 1})
-                recargar()
+                return  # Detener ejecución para refrescar
 
             # Calcular subtotal de esta sección
             subtotal_seccion = 0
@@ -141,7 +148,7 @@ def mostrar_ventas():
 
             st.markdown(f"🧮 Subtotal emprendimiento #{sec_id + 1}: **${subtotal_seccion:.2f}**")
 
-        # Botón para agregar nueva sección de emprendimiento
+        # Botón para agregar nueva sección de emprendimiento (fuera de todas las secciones)
         if st.button("➕ Agregar emprendimiento"):
             nuevo_id = st.session_state.contador_secciones
             st.session_state.secciones.append({
@@ -150,7 +157,7 @@ def mostrar_ventas():
                 "productos": [{"producto": None, "cantidad": 1}]
             })
             st.session_state.contador_secciones += 1
-            recargar()
+            return  # Detener para refrescar y mostrar la nueva sección
 
         # Mostrar total general fuera de secciones
         if productos_vender:
@@ -161,7 +168,7 @@ def mostrar_ventas():
         # Selector tipo de pago (siempre visible)
         tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
-        # Botón para registrar venta (lógica pendiente)
+        # Botón para registrar venta (pendiente de implementar)
         if st.button("✅ Registrar venta"):
             if not productos_vender:
                 st.error("Debes seleccionar al menos un producto antes de registrar la venta.")
@@ -177,3 +184,4 @@ def mostrar_ventas():
             cursor.close()
         if 'con' in locals():
             con.close()
+
