@@ -37,7 +37,7 @@ def mostrar_ventas():
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
-            id_emp = seccion["emprendimiento"]
+            id_emp = seccion.get("emprendimiento")
 
             if id_emp is None:
                 emp_sel = st.selectbox(
@@ -49,6 +49,10 @@ def mostrar_ventas():
                     seccion["emprendimiento"] = emprend_dict[emp_sel]
                     st.rerun()
                 continue
+
+            # Validar que productos sea lista
+            if not isinstance(seccion["productos"], list):
+                seccion["productos"] = [{}]
 
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
             if not productos_disponibles:
