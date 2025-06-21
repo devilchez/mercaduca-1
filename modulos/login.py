@@ -12,7 +12,7 @@ st.set_page_config(page_title="MERCADUCA", layout="centered")
 
 # 🔐 Control de sesión
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
-login() # Mostrar login si no hay sesión iniciada
+    login() # Mostrar login si no hay sesión iniciada
 else:
 tipo = st.session_state["tipo_usuario"]
 
@@ -20,11 +20,11 @@ st.sidebar.title("Menú")
 opcion = st.sidebar.selectbox("Ir a:", ["Ventas", "Abastecimiento", "Registrar Emprendedor", "Cerrar sesión"])
 
 if opcion == "Ventas" and tipo == "Administrador":
-mostrar_ventas()
+    mostrar_ventas()
 elif opcion == "Abastecimiento" and tipo in ["Asistente", "Administrador"]:
-mostrar_abastecimiento()
+    mostrar_abastecimiento()
 elif opcion == "Registrar Emprendedor" and tipo in ["Asistente", "Administrador"]:
-registrar_emprendedor()
+    registrar_emprendedor()
 elif opcion == "Cerrar sesión":
 st.session_state.clear()
 st.rerun()
