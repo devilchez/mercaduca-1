@@ -91,7 +91,7 @@ def mostrar_ventas():
 
             if st.button(f"➕ Agregar otro producto a {emp_sel}", key=f"agrega_{sec_id}"):
                 seccion["productos"] += 1
-                st.rerun()
+                st.experimental_rerun()
 
         if productos_vender:
             st.markdown("---")
@@ -101,7 +101,7 @@ def mostrar_ventas():
         if col1.button("➕ Agregar otro emprendimiento"):
             st.session_state.secciones.append({"id": st.session_state.contador_secciones, "productos": 1})
             st.session_state.contador_secciones += 1
-            st.rerun()
+            st.experimental_rerun()
 
         if col2.button("✅ Registrar venta"):
             if not productos_vender:
