@@ -148,7 +148,7 @@ def mostrar_ventas():
                         precio_unitario = p["precio_unitario"]
 
                         cursor.execute(
-                            "INSERT INTO PRODUCTOxVENTA (id_venta, id_producto, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
+                            "INSERT INTO PRODUCTOXVENTA (id_venta, id_producto, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
                             (id_venta, id_producto, cantidad_vendida, precio_unitario)
                         )
 
