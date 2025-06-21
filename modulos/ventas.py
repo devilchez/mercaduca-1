@@ -17,7 +17,7 @@ def mostrar_ventas():
 
     # Función para recargar la app y mantener estado
     def recargar():
-        st.experimental_rerun()
+        st.rerun()
 
     try:
         con = obtener_conexion()
