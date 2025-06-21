@@ -7,6 +7,7 @@ from modulos.login import login
 from modulos.ventas import mostrar_ventas
 from modulos.abastecimiento import mostrar_abastecimiento
 from modulos.registro_emprendimiento import registrar_emprendimiento
+from modulos.registro_producto import registrar_producto
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
