@@ -4,18 +4,15 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("🧾 Registrar venta")
 
-    # Inicialización de estado
+    # Inicialización del estado
     if "secciones" not in st.session_state:
         st.session_state.secciones = [{
             "id": 0,
-            "emprendimiento": None,    # ID del emprendimiento seleccionado
-            "productos": [             # Lista de dicts {"producto": nombre, "cantidad": int}
-                {"producto": None, "cantidad": 1}
-            ]
+            "emprendimiento": None,
+            "productos": [{"producto": None, "cantidad": 1}]
         }]
         st.session_state.contador_secciones = 1
 
-    # Función para recargar la app y mantener estado
     def recargar():
         st.rerun()
 
@@ -42,19 +39,31 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
-        # Mostrar cada sección con selector emprendimiento y productos
+        # Mostrar cada sección
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
 
-            # Selector de emprendimiento
+            # Validar que 'productos' sea lista de dicts correctamente
+            if not isinstance(seccion.get("productos"), list):
+                seccion["productos"] = [{"producto": None, "cantidad": 1}]
+            else:
+                # Sanitizar la lista para que cada item sea dict con claves esperadas
+                for i, p in enumerate(seccion["productos"]):
+                    if not isinstance(p, dict):
+                        seccion["productos"][i] = {"producto": None, "cantidad": 1}
+                    else:
+                        if "producto" not in p:
+                            seccion["productos"][i]["producto"] = None
+                        if "cantidad" not in p:
+                            seccion["productos"][i]["cantidad"] = 1
+
             opciones_emprendimiento = ["-- Selecciona --"] + list(emprend_dict.keys())
             idx_emp_sel = 0
             if seccion["emprendimiento"]:
-                # Buscar índice para el valor seleccionado
-                nombre_emprendimiento = next((k for k,v in emprend_dict.items() if v == seccion["emprendimiento"]), None)
-                if nombre_emprendimiento in opciones_emprendimiento:
-                    idx_emp_sel = opciones_emprendimiento.index(nombre_emprendimiento)
+                nombre_emp = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), None)
+                if nombre_emp in opciones_emprendimiento:
+                    idx_emp_sel = opciones_emprendimiento.index(nombre_emp)
 
             emprendimiento_sel = st.selectbox(
                 "Selecciona un emprendimiento",
@@ -81,23 +90,25 @@ def mostrar_ventas():
 
             opciones_productos = ["-- Selecciona --"] + [p["nombre"] for p in productos_disponibles]
 
-            # Si no hay productos en la lista, inicializar con uno vacío
-            if not seccion["productos"]:
+            # Asegurar que haya al menos un producto para mostrar
+            if len(seccion["productos"]) == 0:
                 seccion["productos"].append({"producto": None, "cantidad": 1})
 
-            # Mostrar productos en esta sección
             for i, prod in enumerate(seccion["productos"]):
                 col1, col2 = st.columns([3,1])
+
+                idx_prod_sel = 0
+                if prod["producto"] in opciones_productos:
+                    idx_prod_sel = opciones_productos.index(prod["producto"])
+
                 with col1:
-                    idx_prod_sel = 0
-                    if prod["producto"] in opciones_productos:
-                        idx_prod_sel = opciones_productos.index(prod["producto"])
                     prod_sel = st.selectbox(
                         f"Selecciona producto #{i+1}",
                         opciones_productos,
                         index=idx_prod_sel,
                         key=f"producto_{sec_id}_{i}"
                     )
+
                 with col2:
                     cantidad = st.number_input(
                         f"Cantidad #{i+1}",
@@ -107,7 +118,6 @@ def mostrar_ventas():
                         key=f"cantidad_{sec_id}_{i}"
                     )
 
-                # Actualizar estado
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
 
@@ -116,7 +126,7 @@ def mostrar_ventas():
                 seccion["productos"].append({"producto": None, "cantidad": 1})
                 recargar()
 
-            # Calcular subtotal sección
+            # Calcular subtotal de la sección
             subtotal_seccion = 0
             for p in seccion["productos"]:
                 if p["producto"]:
@@ -139,7 +149,7 @@ def mostrar_ventas():
             st.session_state.secciones.append({
                 "id": nuevo_id,
                 "emprendimiento": None,
-                "productos": []
+                "productos": [{"producto": None, "cantidad": 1}]
             })
             st.session_state.contador_secciones += 1
             recargar()
