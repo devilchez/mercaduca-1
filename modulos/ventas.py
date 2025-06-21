@@ -33,43 +33,45 @@ def mostrar_ventas():
             sec_id = seccion["id"]
             st.subheader(f"Emprendimiento #{sec_id + 1}")
 
-            # Selección de emprendimiento
-            emp_sel = st.selectbox(
-                f"Selecciona un emprendimiento (sección {sec_id + 1})",
-                ["-- Selecciona --"] + list(emprend_dict.keys()),
-                key=f"emprend_{sec_id}"
+    # ✅ Mostrar emprendimiento una sola vez por sección
+    emp_sel = st.selectbox(
+        f"Selecciona un emprendimiento (sección {sec_id + 1})",
+        ["-- Selecciona --"] + list(emprend_dict.keys()),
+        key=f"emprend_{sec_id}"
+    )
+
+    if emp_sel == "-- Selecciona --":
+        continue
+
+    id_emp = emprend_dict[emp_sel]
+    st.session_state.emprendimientos_seleccionados[sec_id] = id_emp
+    productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
+
+    if not productos_disponibles:
+        st.warning("Este emprendimiento no tiene productos.")
+        continue
+
+    opciones_str = [f"{nombre} (ID: {idp}) - ${precio:.2f}" for idp, nombre, precio in productos_disponibles]
+
+    # ✅ Mostrar solo los productos
+    for i in range(seccion["productos"]):
+        st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            prod_sel = st.selectbox(
+                f"Producto {i + 1} (sección {sec_id + 1})",
+                ["-- Selecciona --"] + opciones_str,
+                key=f"producto_{sec_id}_{i}"
+            )
+        with col2:
+            cantidad = st.number_input(
+                f"Cantidad {i + 1} (sección {sec_id + 1})",
+                min_value=1,
+                step=1,
+                key=f"cantidad_{sec_id}_{i}"
             )
 
-            if emp_sel == "-- Selecciona --":
-                continue
-
-            id_emp = emprend_dict[emp_sel]
-            st.session_state.emprendimientos_seleccionados[sec_id] = id_emp
-            productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
-
-            if not productos_disponibles:
-                st.warning("Este emprendimiento no tiene productos.")
-                continue
-
-            opciones_str = [f"{nombre} (ID: {idp}) - ${precio:.2f}" for idp, nombre, precio in productos_disponibles]
-
-            for i in range(seccion["productos"]):
-                st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    prod_sel = st.selectbox(
-                        f"Producto {i + 1} (sección {sec_id + 1})",
-                        ["-- Selecciona --"] + opciones_str,
-                        key=f"producto_{sec_id}_{i}"
-                    )
-                with col2:
-                    cantidad = st.number_input(
-                        f"Cantidad {i + 1} (sección {sec_id + 1})",
-                        min_value=1,
-                        step=1,
-                        key=f"cantidad_{sec_id}_{i}"
-                    )
 
                 # Verificar si el producto fue seleccionado correctamente
                 if prod_sel != "-- Selecciona --":
