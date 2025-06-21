@@ -1,43 +1,37 @@
 import streamlit as st
 from modulos.config.conexion import obtener_conexion
 
-def registrar_emprendedor():
+def registrar_emprendimiento():
     if "usuario" not in st.session_state:
         st.warning("⚠️ Debes iniciar sesión.")
         st.stop()
 
-    st.header("Registrar nuevo emprendedor")
+    st.header("Registrar nuevo emprendimiento")
 
     # Formulario
-    nombre = st.text_input("Nombre")
-    apellido = st.text_input("Apellido")
-    correo = st.text_input("Correo electrónico")
-    telefono = st.text_input("Teléfono")
+    id_emprendimiento = st.text_input("ID del Emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento")
+    nombre_emprendedor = st.text_input("Nombre del emprendedor")
+    telefono = st.text_input("Teléfono")
+    cuenta_bancaria = st.text_input("Cuenta bancaria")
+    estado = st.selectbox("Estado", ["Activo", "Inactivo"])
 
     if st.button("Registrar"):
-        if not (nombre and apellido and correo and telefono and nombre_emprendimiento):
+        if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and telefono and cuenta_bancaria and estado):
             st.warning("⚠️ Por favor, completa todos los campos.")
         else:
             try:
                 con = obtener_conexion()
                 cursor = con.cursor()
 
-                # Insertar en EMPRENDEDOR
-                cursor.execute("""
-                    INSERT INTO EMPRENDEDOR (Nombre, Apellido, Correo, Telefono)
-                    VALUES (%s, %s, %s, %s)
-                """, (nombre, apellido, correo, telefono))
-                id_emprendedor = cursor.lastrowid
-
                 # Insertar en EMPRENDIMIENTO
                 cursor.execute("""
-                    INSERT INTO EMPRENDIMIENTO (ID_Emprendedor, Nombre_emprendimiento)
-                    VALUES (%s, %s)
-                """, (id_emprendedor, nombre_emprendimiento))
+                    INSERT INTO EMPRENDIMIENTO (ID_Emprendimiento, Nombre_emprendimiento, Nombre_emprendedor, Telefono, Cuenta_bancaria, Estado)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (id_emprendimiento, nombre_emprendimiento, nombre_emprendedor, telefono, cuenta_bancaria, estado))
 
                 con.commit()
-                st.success("✅ Emprendedor registrado correctamente.")
+                st.success("✅ Emprendimiento registrado correctamente.")
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
