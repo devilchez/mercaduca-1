@@ -29,6 +29,9 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
+        # Variable para el tipo de pago
+        tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
+
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
@@ -50,17 +53,20 @@ def mostrar_ventas():
                 st.warning("Este emprendimiento no tiene productos.")
                 continue
 
+            # Mostrar solo el nombre del producto en la lista desplegable
             opciones_dict = {
-                f"{nombre} (ID: {idp}) - ${precio:.2f}": (idp, nombre, precio)
+                f"{nombre}": (idp, nombre, precio)  # Solo mostramos el nombre
                 for idp, nombre, precio in productos_disponibles
             }
-            opciones_str = list(opciones_dict.keys())
+
+            opciones_str = list(opciones_dict.keys())  # Solo obtenemos los nombres
 
             for i in range(seccion["productos"]):
                 st.markdown(f"**Producto #{i + 1} de {emp_sel}**")
                 col1, col2 = st.columns(2)
 
                 with col1:
+                    # Selección de producto: Mostramos solo el nombre
                     prod_sel = st.selectbox(
                         f"Producto {i + 1} (sección {sec_id + 1})",
                         ["-- Selecciona --"] + opciones_str,
@@ -134,7 +140,7 @@ def mostrar_ventas():
 
             try:
                 # 1. Insertar la venta
-                cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", ("Efectivo",))
+                cursor.execute("INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)", (tipo_pago,))
                 id_venta = cursor.lastrowid  # Obtener el ID de la venta recién insertada
                 st.write(f"ID de la venta: {id_venta}")  # Depuración: Ver el ID de venta generado
 
