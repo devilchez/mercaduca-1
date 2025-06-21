@@ -1,79 +1,200 @@
 import streamlit as st
+from datetime import datetime
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_ventas():
-    st.header("Registrar venta")
-    try:
-        con = obtener_conexion()
-        cursor = con.cursor()
+st.header("📟 Registrar venta")
 
-        # Obtener productos
-        cursor.execute("SELECT ID_Producto, Nombre_producto, Precio FROM PRODUCTO")
-        productos = cursor.fetchall()
-        producto_dict = {nombre: (idp, precio) for idp, nombre, precio in productos}
+# Estado inicial
+if "secciones" not in st.session_state:
+st.session_state.secciones = [{
+"id": 0,
+"emprendimiento": None,
+"productos": []
+}]
+st.session_state.contador_secciones = 1
 
-        producto_sel = st.selectbox("Producto", list(producto_dict.keys()))
-        cantidad = st.number_input("Cantidad vendida", min_value=1)
-        tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"])
+try:
+con = obtener_conexion()
+cursor = con.cursor()
 
-        id_producto, precio_unitario = producto_dict[producto_sel]
-        total = cantidad * precio_unitario
-        st.markdown(f"**Precio unitario:** ${precio_unitario:.2f}")
-        st.markdown(f"**Total a cobrar:** ${total:.2f}")
+# Cargar emprendimientos y productos
+cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
+emprendimientos = cursor.fetchall()
+emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        if st.button("Registrar venta"):
-            # Obtener el stock total disponible
-            cursor.execute(
-                "SELECT SUM(Stock) FROM INVENTARIO WHERE ID_Producto = %s",
-                (id_producto,)
-            )
-            resultado = cursor.fetchone()
-            stock_disponible = int(resultado[0]) if resultado and resultado[0] else 0
+cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
+productos = cursor.fetchall()
+productos_por_emprendimiento = {}
+for idp, nombre, precio, id_emp in productos:
+productos_por_emprendimiento.setdefault(id_emp, []).append({
+"id": idp,
+"nombre": nombre,
+"precio": precio
+})
 
-            if stock_disponible >= cantidad:
-                try:
-                    # Insertar en la tabla VENTA
-                    cursor.execute(
-                        "INSERT INTO VENTA (Fecha_venta, ID_Producto, Cantidad_vendida, Tipo_pago) "
-                        "VALUES (NOW(), %s, %s, %s)",
-                        (id_producto, cantidad, tipo_pago)
-                    )
+total_general = 0
+productos_vender = []
 
-                    # Actualizar inventario con lógica FIFO
-                    cantidad_restante = cantidad
-                    cursor.execute(
-                        "SELECT ID_Inventario, Stock FROM INVENTARIO "
-                        "WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_ingreso ASC",
-                        (id_producto,)
-                    )
-                    inventarios = cursor.fetchall()
+# Mostrar secciones de emprendimientos y productos
+for seccion in st.session_state.secciones:
+sec_id = seccion["id"]
+st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
 
-                    for inv_id, stock_en_fila in inventarios:
-                        if cantidad_restante <= 0:
-                            break
-                        a_restar = min(cantidad_restante, stock_en_fila)
-                        cursor.execute(
-                            "UPDATE INVENTARIO SET Stock = Stock - %s WHERE ID_Inventario = %s",
-                            (a_restar, inv_id)
-                        )
-                        cantidad_restante -= a_restar
+if seccion["emprendimiento"] is None:
+opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
+emprendimiento_sel = st.selectbox(
+f"Selecciona un emprendimiento",
+opciones_emp,
+index=0,
+key=f"emprend_{sec_id}"
+)
+if emprendimiento_sel != "-- Selecciona --":
+seccion["emprendimiento"] = emprend_dict[emprendimiento_sel]
+seccion["productos"] = [{"producto": None, "cantidad": 1}]
+st.rerun()
+else:
+st.info("Selecciona un emprendimiento para continuar.")
+continue
+else:
+nombre_emp = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "Desconocido")
+st.markdown(f"✅ **Emprendimiento seleccionado:** `{nombre_emp}`")
 
-                    if cantidad_restante > 0:
-                        raise Exception("❌ Stock inconsistente. No se pudo descontar toda la cantidad.")
+id_emp = seccion["emprendimiento"]
+productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
 
-                    con.commit()
-                    st.success("✅ Venta registrada correctamente")
+if not productos_disponibles:
+st.warning("Este emprendimiento no tiene productos.")
+continue
 
-                except Exception as e:
-                    con.rollback()
-                    st.error(f"❌ Error al registrar la venta: {e}")
-            else:
-                st.error("⚠️ No hay suficiente stock para esta venta.")
+opciones_productos = ["-- Selecciona --"] + [p["nombre"] for p in productos_disponibles]
 
-    except Exception as e:
-        st.error(f"Error de conexión o consulta: {e}")
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'con' in locals():
-            con.close()
+for i, prod in enumerate(seccion["productos"]):
+col1, col2 = st.columns([3, 1])
+
+idx_prod_sel = 0
+if prod["producto"] in opciones_productos:
+idx_prod_sel = opciones_productos.index(prod["producto"])
+
+with col1:
+prod_sel = st.selectbox(
+f"Selecciona producto #{i + 1}",
+opciones_productos,
+index=idx_prod_sel,
+key=f"producto_{sec_id}_{i}"
+)
+with col2:
+cantidad = st.number_input(
+f"Cantidad #{i + 1}",
+min_value=1,
+value=prod.get("cantidad", 1),
+step=1,
+key=f"cantidad_{sec_id}_{i}"
+)
+
+seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
+seccion["productos"][i]["cantidad"] = cantidad
+
+if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_{sec_id}"):
+seccion["productos"].append({"producto": None, "cantidad": 1})
+st.rerun()
+
+subtotal = 0
+for p in seccion["productos"]:
+if p["producto"]:
+info = next((x for x in productos_disponibles if x["nombre"] == p["producto"]), None)
+if info:
+subtotal += info["precio"] * p["cantidad"]
+productos_vender.append({
+"id_producto": info["id"],
+"cantidad": p["cantidad"],
+"precio_unitario": info["precio"]
+})
+total_general += subtotal
+st.markdown(f"🧮 Subtotal emprendimiento #{sec_id + 1}: **${subtotal:.2f}**")
+
+if all(sec["emprendimiento"] is not None for sec in st.session_state.secciones):
+if st.button("➕ Agregar otro emprendimiento"):
+nuevo_id = st.session_state.contador_secciones
+st.session_state.secciones.append({
+"id": nuevo_id,
+"emprendimiento": None,
+"productos": []
+})
+st.session_state.contador_secciones += 1
+st.rerun()
+
+if productos_vender:
+st.markdown("---")
+st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
+tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
+
+if st.button("✅ Registrar venta"):
+try:
+fecha_venta = datetime.now()
+total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
+
+# Insertar venta con suma total de cantidad vendida
+cursor.execute(
+"INSERT INTO VENTA (fecha_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s)",
+(fecha_venta, tipo_pago, total_cantidad_vendida)
+)
+id_venta = cursor.lastrowid
+
+# Insertar detalle y actualizar inventario FIFO
+for p in productos_vender:
+id_producto = p["id_producto"]
+cantidad_vendida = p["cantidad"]
+precio_unitario = p["precio_unitario"]
+
+cursor.execute(
+"INSERT INTO PRODUCTOXVENTA (id_venta, id_producto, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
+(id_venta, id_producto, cantidad_vendida, precio_unitario)
+)
+
+restante = cantidad_vendida
+
+cursor.execute(
+"SELECT ID_Inventario, Stock FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_ingreso ASC",
+(id_producto,)
+)
+inventario = cursor.fetchall()
+
+for id_inventario, stock in inventario:
+if restante <= 0:
+break
+if stock <= restante:
+cursor.execute(
+"UPDATE INVENTARIO SET Stock = 0, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
+(fecha_venta, stock, id_inventario)
+)
+restante -= stock
+else:
+nuevo_stock = stock - restante
+cursor.execute(
+"UPDATE INVENTARIO SET Stock = %s, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
+(nuevo_stock, fecha_venta, restante, id_inventario)
+)
+restante = 0
+
+if restante > 0:
+raise Exception(f"Stock insuficiente para producto ID {id_producto}")
+
+con.commit()
+st.success(f"✅ Venta registrada correctamente con ID: {id_venta}")
+st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
+st.session_state.contador_secciones = 1
+st.rerun()
+
+except Exception as e:
+con.rollback()
+st.error(f"❌ Error al registrar la venta o actualizar inventario: {e}")
+
+except Exception as e:
+st.error(f"❌ Error general: {e}")
+
+finally:
+if 'cursor' in locals():
+cursor.close()
+if 'con' in locals():
+con.close()
