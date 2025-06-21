@@ -24,7 +24,7 @@ else:
     elif opcion == "Abastecimiento" and tipo in ["Asistente", "Administrador"]:
         mostrar_abastecimiento()
     elif opcion == "Registrar Emprendimiento" and tipo in ["Asistente", "Administrador"]:
-    registrar_emprendimiento()
+        registrar_emprendimiento()
     elif opcion == "Cerrar sesión":
         st.session_state.clear()
         st.rerun()
