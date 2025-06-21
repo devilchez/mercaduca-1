@@ -6,13 +6,15 @@ def mostrar_ventas():
 
     # Inicialización de estado
     if "secciones" not in st.session_state:
-        st.session_state.secciones = []
-    if "contador_secciones" not in st.session_state:
-        st.session_state.contador_secciones = 0
-    if "productos_vender" not in st.session_state:
+        st.session_state.secciones = [{
+            "id": 0,
+            "emprendimiento": None,
+            "productos": [{}]  # Solo un producto por defecto
+        }]
+        st.session_state.contador_secciones = 1
         st.session_state.productos_vender = []
-    if "flag_agregado" not in st.session_state:
         st.session_state.flag_agregado = False
+        st.session_state.flag_producto = {}
 
     try:
         con = obtener_conexion()
@@ -35,20 +37,22 @@ def mostrar_ventas():
             st.session_state.flag_agregado = True
             st.rerun()
 
-        # Acción: agregar sección solo si fue marcado
+        # Acción: agregar nueva sección
         if st.session_state.flag_agregado:
+            nuevo_id = st.session_state.contador_secciones
             st.session_state.secciones.append({
-                "id": st.session_state.contador_secciones,
+                "id": nuevo_id,
                 "emprendimiento": None,
-                "productos": []
+                "productos": [{}]
             })
             st.session_state.contador_secciones += 1
             st.session_state.flag_agregado = False
+            st.rerun()
 
         total_general = 0
         st.session_state.productos_vender = []
 
-        # Mostrar secciones de emprendimiento
+        # Mostrar secciones
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
@@ -75,6 +79,7 @@ def mostrar_ventas():
                 nombre: (idp, nombre, precio) for idp, nombre, precio in productos_disponibles
             }
             opciones_str = list(opciones_dict.keys())
+
             subtotal_emprendimiento = 0
 
             for i, _ in enumerate(seccion["productos"]):
@@ -111,15 +116,24 @@ def mostrar_ventas():
             st.markdown(f"🧮 Subtotal por emprendimiento #{sec_id + 1}: **${subtotal_emprendimiento:.2f}**")
             total_general += subtotal_emprendimiento
 
+            # Control para agregar producto
+            if sec_id not in st.session_state.flag_producto:
+                st.session_state.flag_producto[sec_id] = False
+
             if st.button(f"➕ Agregar producto a emprendimiento #{sec_id + 1}", key=f"agrega_producto_{sec_id}"):
+                st.session_state.flag_producto[sec_id] = True
+                st.rerun()
+
+            if st.session_state.flag_producto[sec_id]:
                 seccion["productos"].append({})
+                st.session_state.flag_producto[sec_id] = False
                 st.rerun()
 
         if st.session_state.productos_vender:
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
-        # Tipo de pago final
+        # Selector de tipo de pago
         tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
         if st.button("✅ Registrar venta"):
