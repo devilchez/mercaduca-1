@@ -5,7 +5,7 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("🧾 Registrar venta")
 
-    # Inicializar estado si no existe
+    # Estado inicial
     if "secciones" not in st.session_state:
         st.session_state.secciones = [{
             "id": 0,
@@ -18,12 +18,11 @@ def mostrar_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Cargar emprendimientos
+        # Emprendimientos y productos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        # Cargar productos por emprendimiento
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
@@ -37,15 +36,15 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
+        # Mostrar secciones existentes
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
 
-            # Si aún no se ha seleccionado
             if seccion["emprendimiento"] is None:
                 opciones_emprendimiento = ["-- Selecciona --"] + list(emprend_dict.keys())
                 emprendimiento_sel = st.selectbox(
-                    "Selecciona un emprendimiento",
+                    f"Selecciona un emprendimiento",
                     opciones_emprendimiento,
                     index=0,
                     key=f"emprend_{sec_id}"
@@ -62,7 +61,6 @@ def mostrar_ventas():
                 nombre_emp = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "Desconocido")
                 st.markdown(f"✅ **Emprendimiento seleccionado:** `{nombre_emp}`")
 
-            # Productos disponibles
             id_emp = seccion["emprendimiento"]
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
 
@@ -103,7 +101,7 @@ def mostrar_ventas():
                 seccion["productos"].append({"producto": None, "cantidad": 1})
                 st.rerun()
 
-            # Subtotal y recolectar productos
+            # Subtotal
             subtotal = 0
             for p in seccion["productos"]:
                 if p["producto"]:
@@ -112,24 +110,26 @@ def mostrar_ventas():
                         subtotal += info["precio"] * p["cantidad"]
                         productos_vender.append({
                             "id_producto": info["id"],
-                            "precio_unitario": info["precio"],
-                            "cantidad": p["cantidad"]
+                            "cantidad": p["cantidad"],
+                            "precio_unitario": info["precio"]
                         })
 
             total_general += subtotal
             st.markdown(f"🧮 Subtotal emprendimiento #{sec_id + 1}: **${subtotal:.2f}**")
 
-        # Botón para agregar nueva sección
-        if st.button("➕ Agregar otro emprendimiento"):
-            nuevo_id = st.session_state.contador_secciones
-            st.session_state.secciones.append({
-                "id": nuevo_id,
-                "emprendimiento": None,
-                "productos": []
-            })
-            st.session_state.contador_secciones += 1
-            st.rerun()
+        # SOLO aparece si ya seleccionaste algún emprendimiento válido
+        if all(sec["emprendimiento"] is not None for sec in st.session_state.secciones):
+            if st.button("➕ Agregar otro emprendimiento"):
+                nuevo_id = st.session_state.contador_secciones
+                st.session_state.secciones.append({
+                    "id": nuevo_id,
+                    "emprendimiento": None,
+                    "productos": []
+                })
+                st.session_state.contador_secciones += 1
+                st.rerun()
 
+        # Registro de venta
         if productos_vender:
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
@@ -139,21 +139,20 @@ def mostrar_ventas():
                 try:
                     # Insertar venta
                     cursor.execute(
-                        "INSERT INTO VENTA (Fecha, Total, Tipo_pago) VALUES (?, ?, ?)",
+                        "INSERT INTO VENTA (Fecha, Total, Tipo_pago) VALUES (%s, %s, %s)",
                         (datetime.now(), total_general, tipo_pago)
                     )
                     id_venta = cursor.lastrowid
 
-                    # Insertar productos
+                    # Insertar productos vendidos
                     for p in productos_vender:
                         cursor.execute(
-                            "INSERT INTO PRODUCTOxVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) VALUES (?, ?, ?, ?)",
+                            "INSERT INTO PRODUCTOxVENTA (ID_Venta, ID_Producto, Cantidad_vendida, Precio_unitario) VALUES (%s, %s, %s, %s)",
                             (id_venta, p["id_producto"], p["cantidad"], p["precio_unitario"])
                         )
 
                     con.commit()
-                    st.success(f"✅ Venta registrada exitosamente con ID: {id_venta}")
-                    # Resetear todo
+                    st.success(f"✅ Venta registrada correctamente con ID: {id_venta}")
                     st.session_state.secciones = [{
                         "id": 0,
                         "emprendimiento": None,
