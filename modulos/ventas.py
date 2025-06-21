@@ -11,38 +11,27 @@ def mostrar_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener emprendimientos
-        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
-        emprendimientos = cursor.fetchall()
-        if not emprendimientos:
-            st.error("No hay emprendimientos registrados.")
-            return
-
-        emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
-        emprend_sel = st.selectbox("Selecciona un emprendimiento", list(emprend_dict.keys()))
-        id_emprendimiento = emprend_dict[emprend_sel]
-
-        # Obtener productos del emprendimiento
+        # Obtener productos con sus emprendimientos
         cursor.execute("""
-            SELECT ID_Producto, Nombre_producto, Precio 
-            FROM PRODUCTO 
-            WHERE ID_Emprendimiento = %s
-        """, (id_emprendimiento,))
+            SELECT P.ID_Producto, P.Nombre_producto, P.Precio, E.Nombre_emprendimiento
+            FROM PRODUCTO P
+            JOIN EMPRENDIMIENTO E ON P.ID_Emprendimiento = E.ID_Emprendimiento
+        """)
         productos = cursor.fetchall()
-
         if not productos:
-            st.warning("Este emprendimiento no tiene productos.")
+            st.warning("No hay productos registrados.")
             return
 
+        # Crear diccionario para desplegar nombre completo
         producto_dict = {
-            f"{nombre} (${precio:.2f})": (idp, precio)
-            for idp, nombre, precio in productos
+            f"{nombre_prod} ({nombre_emp}) - ${precio:.2f}": (idp, precio)
+            for idp, nombre_prod, precio, nombre_emp in productos
         }
 
-        st.markdown("### Productos a vender")
+        st.markdown("### Selecciona productos de distintos emprendimientos")
         productos_vender = []
 
-        with st.form("formulario_venta", clear_on_submit=False):
+        with st.form("formulario_venta_multi", clear_on_submit=False):
             total_general = 0
             for i in range(st.session_state.num_productos):
                 st.markdown(f"#### Producto #{i+1}")
@@ -64,13 +53,13 @@ def mostrar_ventas():
                         "id_producto": id_producto,
                         "precio_unitario": precio_unitario,
                         "cantidad": cantidad,
-                        "nombre": producto_sel.split(" ($")[0],
+                        "nombre": producto_sel.split(" (")[0],
                         "subtotal": subtotal
                     })
                     st.markdown(f"**Subtotal:** ${subtotal:.2f}")
 
             if productos_vender:
-                st.markdown(f"### 💵 Total a cobrar: **${total_general:.2f}**")
+                st.markdown(f"### 💰 Total a cobrar: **${total_general:.2f}**")
 
             tipo_pago = st.selectbox("Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
             col1, col2 = st.columns(2)
@@ -79,7 +68,7 @@ def mostrar_ventas():
 
         if agregar:
             st.session_state.num_productos += 1
-            st.rerun()  # Corrección aquí
+            st.rerun()
 
         if registrar:
             if not productos_vender:
@@ -103,12 +92,14 @@ def mostrar_ventas():
                 return
 
             try:
+                # Insertar venta
                 cursor.execute(
                     "INSERT INTO VENTA (Fecha_venta, Tipo_pago) VALUES (NOW(), %s)",
                     (tipo_pago,)
                 )
                 id_venta = cursor.lastrowid
 
+                # Insertar productos y descontar inventario
                 for item in productos_vender:
                     cursor.execute(
                         "INSERT INTO PRODUCTOXVENTA (ID_Venta, ID_Producto, Cantidad, Precio_unitario) "
@@ -135,11 +126,11 @@ def mostrar_ventas():
                         cantidad_restante -= a_restar
 
                     if cantidad_restante > 0:
-                        raise Exception(f"Error: No se pudo descontar completamente el stock de {item['nombre']}.")
+                        raise Exception(f"{item['nombre']}: No se pudo descontar todo el stock.")
 
                 con.commit()
-                st.success("✅ Venta registrada correctamente.")
-                st.session_state.num_productos = 1  # Reiniciar contador
+                st.success("✅ Venta registrada exitosamente.")
+                st.session_state.num_productos = 1
 
             except Exception as e:
                 con.rollback()
