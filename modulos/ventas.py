@@ -3,7 +3,7 @@ from datetime import datetime
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_ventas():
-    st.header("🧾 Registrar venta")
+    st.header("📟 Registrar venta")
 
     # Estado inicial
     if "secciones" not in st.session_state:
@@ -36,7 +36,7 @@ def mostrar_ventas():
         total_general = 0
         productos_vender = []
 
-        # Mostrar secciones existentes
+        # Mostrar secciones
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
@@ -101,7 +101,6 @@ def mostrar_ventas():
                 seccion["productos"].append({"producto": None, "cantidad": 1})
                 st.rerun()
 
-            # Subtotal
             subtotal = 0
             for p in seccion["productos"]:
                 if p["producto"]:
@@ -117,7 +116,6 @@ def mostrar_ventas():
             total_general += subtotal
             st.markdown(f"🧮 Subtotal emprendimiento #{sec_id + 1}: **${subtotal:.2f}**")
 
-        # SOLO aparece si ya seleccionaste algún emprendimiento válido
         if all(sec["emprendimiento"] is not None for sec in st.session_state.secciones):
             if st.button("➕ Agregar otro emprendimiento"):
                 nuevo_id = st.session_state.contador_secciones
@@ -129,7 +127,6 @@ def mostrar_ventas():
                 st.session_state.contador_secciones += 1
                 st.rerun()
 
-        # Registro de venta
         if productos_vender:
             st.markdown("---")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
@@ -137,32 +134,54 @@ def mostrar_ventas():
 
             if st.button("✅ Registrar venta"):
                 try:
-                    # Insertar venta
                     cursor.execute(
                         "INSERT INTO VENTA (Fecha, Total, Tipo_pago) VALUES (%s, %s, %s)",
                         (datetime.now(), total_general, tipo_pago)
                     )
                     id_venta = cursor.lastrowid
 
-                    # Insertar productos vendidos
                     for p in productos_vender:
+                        id_producto = p["id_producto"]
+                        cantidad_vendida = p["cantidad"]
+                        precio_unitario = p["precio_unitario"]
+
                         cursor.execute(
                             "INSERT INTO PRODUCTOxVENTA (ID_Venta, ID_Producto, Cantidad_vendida, Precio_unitario) VALUES (%s, %s, %s, %s)",
-                            (id_venta, p["id_producto"], p["cantidad"], p["precio_unitario"])
+                            (id_venta, id_producto, cantidad_vendida, precio_unitario)
                         )
+
+                        restante = cantidad_vendida
+                        cursor.execute(
+                            "SELECT ID_Inventario, Stock FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_ingreso ASC",
+                            (id_producto,)
+                        )
+                        inventario = cursor.fetchall()
+
+                        for id_inventario, stock in inventario:
+                            if restante <= 0:
+                                break
+                            if stock <= restante:
+                                cursor.execute(
+                                    "UPDATE INVENTARIO SET Stock = 0, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
+                                    (datetime.now(), stock, id_inventario)
+                                )
+                                restante -= stock
+                            else:
+                                nuevo_stock = stock - restante
+                                cursor.execute(
+                                    "UPDATE INVENTARIO SET Stock = %s, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
+                                    (nuevo_stock, datetime.now(), restante, id_inventario)
+                                )
+                                restante = 0
 
                     con.commit()
                     st.success(f"✅ Venta registrada correctamente con ID: {id_venta}")
-                    st.session_state.secciones = [{
-                        "id": 0,
-                        "emprendimiento": None,
-                        "productos": []
-                    }]
+                    st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
                     st.session_state.contador_secciones = 1
                     st.rerun()
                 except Exception as e:
                     con.rollback()
-                    st.error(f"❌ Error al registrar la venta: {e}")
+                    st.error(f"❌ Error al registrar la venta o actualizar inventario: {e}")
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
