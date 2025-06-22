@@ -20,7 +20,7 @@ st.markdown(
         text-align: center;
         font-size: 3em;
         font-weight: bold;
-        color:#004d00;
+        color:#2e4d26;
     }
     </style>
     <div class="centered-title">MERCADUCA</div>
