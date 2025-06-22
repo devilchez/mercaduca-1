@@ -22,6 +22,7 @@ st.markdown(
         font-weight: bold;
         color: #2e4d26;
         margin-bottom: 0.1em;
+        font-family: 'Trebuchet MS', sans-serif;
     }
     .subtext {
         text-align: center;
@@ -31,11 +32,12 @@ st.markdown(
         font-style: italic;
     }
     </style>
-    <div class="centered-title">MERCAGESTIÓN</div>
-    <div class="subtext">Para MERCADUCA</div>
+    <div class="centered-title">Mercagestión</div>
+    <div class="subtext">para MERCADUCA</div>
     """,
     unsafe_allow_html=True
 )
+
 
 
 st.markdown(
