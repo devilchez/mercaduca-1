@@ -43,10 +43,50 @@ def actualizar_emprendimiento(df):
     else:
         st.warning("⚠️ No hubo registros actualizados. Verifica que los ID coincidan.")
 
+def eliminar_emprendimientos(ids_a_eliminar):
+    """Elimina emprendimientos por sus ID desde la base de datos."""
+    con = obtener_conexion()
+    cursor = con.cursor()
+    formato_ids = ','.join(['%s'] * len(ids_a_eliminar))
+
+    cursor.execute(f"DELETE FROM EMPRENDIMIENTO WHERE ID_Emprendimiento IN ({formato_ids})", tuple(ids_a_eliminar))
+    registros_eliminados = cursor.rowcount
+
+    con.commit()
+    con.close()
+
+    if registros_eliminados > 0:
+        st.success(f"🗑️ Se eliminaron {registros_eliminados} emprendimiento(s).")
+    else:
+        st.warning("⚠️ No se eliminó ningún registro. Verifica los ID seleccionados.")
+
 def mostrar_emprendimientos():
-    """Muestra la tabla de EMPRENDIMIENTOS para permitir la edición."""
-    st.header("Emprendimientos registrados")
+    """Muestra la tabla de EMPRENDIMIENTOS para permitir edición y eliminación."""
+    st.header("📋 Emprendimientos registrados")
+
     df = obtener_emprendimientos()
-    edited_df = st.data_editor(df, num_rows="fixed")
-    if st.button("Guardar Cambios"):
-        actualizar_emprendimiento(edited_df)
+    if df.empty:
+        st.info("No hay emprendimientos registrados.")
+        return
+
+    # Agregamos columna para eliminar
+    df["Eliminar"] = False
+    edited_df = st.data_editor(df, num_rows="fixed", use_container_width=True, key="editor_emprendimientos")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("💾 Guardar Cambios"):
+            actualizar_emprendimiento(edited_df.drop(columns=["Eliminar"]))
+
+    with col2:
+        if st.button("🗑️ Eliminar seleccionados"):
+            ids_a_eliminar = edited_df[edited_df["Eliminar"] == True]["ID_Emprendimiento"].tolist()
+            if ids_a_eliminar:
+                eliminar_emprendimientos(ids_a_eliminar)
+            else:
+                st.info("Selecciona al menos un emprendimiento para eliminar.")
+
+# Para ejecución directa
+if __name__ == "__main__":
+    mostrar_emprendimientos()
