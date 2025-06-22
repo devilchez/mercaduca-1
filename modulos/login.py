@@ -19,6 +19,14 @@ def verificar_usuario(usuario, contrasena):
         con.close()
 
 def login():
+    st.markdown(
+        """
+        <h1 style='text-align: center; color: #006400;'>Mercagestión</h1>
+        <p style='text-align: center; color: #555555; font-size: 16px;'>para MERCADUCA</p>
+        """,
+        unsafe_allow_html=True
+    )
+    
     st.title("Inicio de sesión")
     usuario = st.text_input("Usuario", key="usuario_input")
     contrasena = st.text_input("Contraseña", type="password", key="contrasena_input")
