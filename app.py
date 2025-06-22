@@ -12,7 +12,23 @@ from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
-st.title("MERCADUCA")
+
+st.markdown(
+    """
+    <style>
+    .centered-title {
+        text-align: center;
+        font-size: 3em;
+        font-weight: bold;
+        color: #262730;
+    }
+    </style>
+    <div class="centered-title">MERCADUCA</div>
+    """,
+    unsafe_allow_html=True
+)
+
+
 st.markdown(
     """
     <style>
