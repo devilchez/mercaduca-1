@@ -12,6 +12,7 @@ from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
+st.image("img/logo mercaduca.jpeg", width=200)
 
 # 🔐 Control de sesión
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
