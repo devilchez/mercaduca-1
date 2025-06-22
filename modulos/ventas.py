@@ -41,24 +41,28 @@ def mostrar_ventas():
             sec_id = seccion["id"]
             st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
 
-            if seccion["emprendimiento"] is None:
-                opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
-                emprendimiento_sel = st.selectbox(
-                    f"Selecciona un emprendimiento",
-                    opciones_emp,
-                    index=0,
-                    key=f"emprend_{sec_id}"
-                )
-                if emprendimiento_sel != "-- Selecciona --":
-                    seccion["emprendimiento"] = emprend_dict[emprendimiento_sel]
-                    seccion["productos"] = [{"producto": None, "cantidad": 1}]
-                    st.rerun()
-                else:
-                    st.info("Selecciona un emprendimiento para continuar.")
-                    continue
-            else:
-                nombre_emp = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "Desconocido")
-                st.markdown(f"✅ **Emprendimiento seleccionado:** `{nombre_emp}`")
+            # Mostrar selectbox siempre
+            opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
+            nombre_emp_actual = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "-- Selecciona --")
+            idx_emp_actual = opciones_emp.index(nombre_emp_actual) if nombre_emp_actual in opciones_emp else 0
+
+            emprendimiento_sel = st.selectbox(
+                f"Selecciona un emprendimiento",
+                opciones_emp,
+                index=idx_emp_actual,
+                key=f"emprend_{sec_id}"
+            )
+
+            if emprendimiento_sel == "-- Selecciona --":
+                st.info("Selecciona un emprendimiento para continuar.")
+                continue
+
+            nuevo_id_emp = emprend_dict[emprendimiento_sel]
+
+            if nuevo_id_emp != seccion["emprendimiento"]:
+                seccion["emprendimiento"] = nuevo_id_emp
+                seccion["productos"] = [{"producto": None, "cantidad": 1}]
+                st.rerun()
 
             id_emp = seccion["emprendimiento"]
             productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
@@ -134,14 +138,12 @@ def mostrar_ventas():
                     fecha_venta = datetime.now()
                     total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
 
-                    # Insertar venta con suma total de cantidad vendida
                     cursor.execute(
                         "INSERT INTO VENTA (fecha_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s)",
                         (fecha_venta, tipo_pago, total_cantidad_vendida)
                     )
                     id_venta = cursor.lastrowid
 
-                    # Insertar detalle y actualizar inventario FIFO
                     for p in productos_vender:
                         id_producto = p["id_producto"]
                         cantidad_vendida = p["cantidad"]
@@ -153,7 +155,6 @@ def mostrar_ventas():
                         )
 
                         restante = cantidad_vendida
-
                         cursor.execute(
                             "SELECT ID_Inventario, Stock FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_ingreso ASC",
                             (id_producto,)
