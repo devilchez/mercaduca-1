@@ -1,2 +1,6 @@
 [theme]
 base="dark"
+primaryColor="#006400"  # Verde oscuro
+backgroundColor="#2e4d26"  # Fondo en verde oscuro más suave
+secondaryBackgroundColor="#4b6b3b"  # Fondo de la barra lateral
+textColor="#ffffff"  # Color de texto blanco para buen contraste
