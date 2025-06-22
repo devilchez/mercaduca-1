@@ -32,7 +32,7 @@ st.markdown(
         font-style: italic;
     }
     </style>
-    <div class="centered-title">Mercagestión</div>
+    <div class="centered-title">MERCAGESTIÓN</div>
     <div class="subtext">para MERCADUCA</div>
     """,
     unsafe_allow_html=True
