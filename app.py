@@ -13,8 +13,10 @@ from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
+
 st.markdown(
     """
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
     .centered-title {
         text-align: center;
@@ -22,7 +24,7 @@ st.markdown(
         font-weight: bold;
         color: #2e4d26;
         margin-bottom: 0.1em;
-        font-family: 'Trebuchet MS', sans-serif;
+        font-family: 'Montserrat', sans-serif;
     }
     .subtext {
         text-align: center;
@@ -37,7 +39,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 
 
 st.markdown(
