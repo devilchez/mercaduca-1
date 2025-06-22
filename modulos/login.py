@@ -21,7 +21,6 @@ def verificar_usuario(usuario, contrasena):
 def login():
     st.markdown(
         """
-        <h1 style='text-align: center; color: #2e4d26;'>MERCAGESTIÓN</h1>
         <p style='text-align: center; color: #555555; font-size: 16px;'>para MERCADUCA</p>
         """,
         unsafe_allow_html=True
