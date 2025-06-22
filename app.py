@@ -17,7 +17,7 @@ st.set_page_config(page_title="MERCADUCA", layout="centered")
 st.markdown(
     """
     <style>
-    .logo-bottom-left {
+    .logo-bottom-right {
         position: fixed;
         bottom: 15px;
         right: 15px;
@@ -30,7 +30,7 @@ st.markdown(
 
 # ✅ Mostrar el logo con clase correcta
 st.markdown(
-    '<img class="logo-bottom-right" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">',
+    '<img class="logo-bottom-left" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">',
     unsafe_allow_html=True
 )
 
@@ -73,4 +73,3 @@ else:
         mostrar_productos()
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
-
