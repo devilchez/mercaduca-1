@@ -12,7 +12,22 @@ from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
-st.image("img/logo mercaduca.jpeg", width=200)
+st.markdown(
+    """
+    <style>
+    .top-right {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 150px;  /* Ajusta el tamaño de la imagen */
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
+# ✅ Insertar la imagen con el estilo aplicado
+st.markdown('<img class="top-right" src="https://github.com/usuario/repositorio/raw/main/img/logo mercaduca.jpeg">', unsafe_allow_html=True)
+
 
 # 🔐 Control de sesión
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
