@@ -22,7 +22,7 @@ def mostrar_abastecimiento():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Cargar emprendimientos y productos
+        # Cargar datos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
@@ -39,7 +39,6 @@ def mostrar_abastecimiento():
 
         productos_abastecer = []
 
-        # Múltiples secciones de abastecimiento por emprendimiento
         for seccion in st.session_state.abast_secciones:
             sec_id = seccion["id"]
             st.subheader(f"🧩 Emprendimiento #{sec_id + 1}")
@@ -49,7 +48,7 @@ def mostrar_abastecimiento():
             idx_emp_actual = opciones_emp.index(nombre_emp_actual) if nombre_emp_actual in opciones_emp else 0
 
             emprendimiento_sel = st.selectbox(
-                f"Selecciona un emprendimiento",
+                "Selecciona un emprendimiento",
                 opciones_emp,
                 index=idx_emp_actual,
                 key=f"abast_emp_{sec_id}"
@@ -70,16 +69,20 @@ def mostrar_abastecimiento():
 
             for i, prod in enumerate(seccion["productos"]):
                 col1, col2 = st.columns([3, 1])
+
                 idx_prod_sel = 0
                 if prod["producto"] in opciones_productos:
                     idx_prod_sel = opciones_productos.index(prod["producto"])
+
+                key_prod = f"abast_producto_{sec_id}_{i}"
+                key_cant = f"abast_cantidad_{sec_id}_{i}"
 
                 with col1:
                     prod_sel = st.selectbox(
                         f"Producto #{i + 1}",
                         opciones_productos,
                         index=idx_prod_sel,
-                        key=f"abast_producto_{sec_id}_{i}"
+                        key=key_prod
                     )
                 with col2:
                     cantidad = st.number_input(
@@ -87,17 +90,21 @@ def mostrar_abastecimiento():
                         min_value=1,
                         value=prod.get("cantidad", 1),
                         step=1,
-                        key=f"abast_cantidad_{sec_id}_{i}"
+                        key=key_cant
                     )
 
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
 
-            if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_abast_{sec_id}"):
-                seccion["productos"].append({"producto": None, "cantidad": 1})
-                st.rerun()
+            # Límite de productos por sección
+            if len(seccion["productos"]) < 200:
+                if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_abast_{sec_id}"):
+                    seccion["productos"].append({"producto": None, "cantidad": 1})
+                    st.rerun()
+            else:
+                st.warning("⚠️ Límite de 200 productos alcanzado para este emprendimiento.")
 
-            # Construir lista final de productos a abastecer
+            # Agregar a la lista final
             for p in seccion["productos"]:
                 if p["producto"]:
                     info = next((x for x in productos_disponibles if x["nombre"] == p["producto"]), None)
