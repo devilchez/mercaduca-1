@@ -8,7 +8,8 @@ from modulos.ventas import mostrar_ventas
 from modulos.abastecimiento import mostrar_abastecimiento
 from modulos.registro_emprendimiento import registrar_emprendimiento
 from modulos.registro_producto import registrar_producto
-from modulos.emprendimientos import mostrar_emprendimientos  # ✅ Importamos la nueva funcion
+from modulos.emprendimientos import mostrar_emprendimientos
+from modulos.productos import mostrar_productos  # ✅ Importamos la función para gestionar productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
@@ -26,6 +27,7 @@ else:
             "Registrar Emprendedor",
             "Gestionar Emprendedores",
             "Registrar Producto",
+            "Gestionar Productos",     # ✅ Nueva opción en el menú
             "Cerrar sesión"
         ]
     )
@@ -40,6 +42,8 @@ else:
         mostrar_emprendimientos()
     elif opcion == "Registrar Producto" and tipo in ["Asistente", "Administrador"]:
         registrar_producto()
+    elif opcion == "Gestionar Productos" and tipo in ["Asistente", "Administrador"]:  # ✅ Gestión de productos
+        mostrar_productos()
     elif opcion == "Cerrar sesión":
         st.session_state.clear()
         st.rerun()
