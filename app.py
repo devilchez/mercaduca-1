@@ -27,11 +27,11 @@ st.markdown(
         text-align: center;
         font-size: 1.2em;
         color: #777777;
-        margin-top: 0
+        margin-top: 0;
         font-style: italic;
     }
     </style>
-    <div class="centered-title">MERCAGESTIÓN</div>
+    <div class="centered-title">Mercagestión</div>
     <div class="subtext">para MERCADUCA</div>
     """,
     unsafe_allow_html=True
