@@ -17,7 +17,7 @@ st.set_page_config(page_title="MERCADUCA", layout="centered")
 st.markdown(
     """
     <style>
-    .logo-bottom-right {
+    .logo-bottom-left {
         position: fixed;
         bottom: 15px;
         right: 15px;
