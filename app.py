@@ -22,7 +22,7 @@ st.markdown(
         text-align: center;
         font-size: 4em;
         font-weight: bold;
-        color: #4b7045;
+        color: #7a9d76;
         margin-bottom: 0.1em;
         font-family: 'Montserrat', sans-serif;
     }
