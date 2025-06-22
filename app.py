@@ -12,23 +12,27 @@ from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
+
+# ✅ CSS para posicionar el logo en la esquina inferior derecha con tamaño controlado
 st.markdown(
     """
     <style>
-    .top-right {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 10px;  /* Ajusta el tamaño de la imagen */
+    .logo-bottom-right {
+        position: fixed;
+        bottom: 15px;
+        right: 15px;
+        width: 80px;  /* Ajusta este valor al tamaño deseado */
+        z-index: 100;
     }
     </style>
     """, unsafe_allow_html=True
 )
 
-# Insertar el logo con el estilo aplicado
-st.markdown('<img class="logo-bottom-right" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">', unsafe_allow_html=True)
-
-
+# ✅ Mostrar el logo con clase correcta
+st.markdown(
+    '<img class="logo-bottom-right" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">',
+    unsafe_allow_html=True
+)
 
 # 🔐 Control de sesión
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
@@ -36,7 +40,6 @@ if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
 else:
     tipo = st.session_state["tipo_usuario"]
 
-    # 📌 Menú lateral
     st.sidebar.title("Menú")
     opcion = st.sidebar.radio(
         "Ir a:",
@@ -50,16 +53,12 @@ else:
         ]
     )
 
-    # Espacio para separar el botón inferior
     st.sidebar.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # 🔲 Botón de cerrar sesión al final de la barra lateral
     if st.sidebar.button("🔓 Cerrar sesión"):
         st.session_state.clear()
         st.rerun()
 
-
-    # ▶️ Ejecutar módulo correspondiente
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
     elif opcion == "Abastecimiento" and tipo in ["Administrador"]:
@@ -74,3 +73,4 @@ else:
         mostrar_productos()
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
+
