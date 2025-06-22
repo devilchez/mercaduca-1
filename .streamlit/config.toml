@@ -2,5 +2,5 @@
 base="dark"  # Tema oscuro
 primaryColor="#006400"  # Verde oscuro para los elementos principales
 backgroundColor="#121212"  # Fondo oscuro para el cuerpo
-secondaryBackgroundColor="#004d00"  # Fondo verde oscuro para la barra lateral
+secondaryBackgroundColor="#f8f9fa"  # Fondo verde oscuro para la barra lateral
 textColor="#ffffff"  # Texto blanco para un buen contraste
