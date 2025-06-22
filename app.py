@@ -30,7 +30,7 @@ st.markdown(
         margin-top: 0;
     }
     </style>
-    <div class="centered-title">Mercagestión</div>
+    <div class="centered-title">MERCAGESTIÓN</div>
     <div class="subtext">para MERCADUCA</div>
     """,
     unsafe_allow_html=True
