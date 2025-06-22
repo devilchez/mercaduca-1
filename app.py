@@ -19,7 +19,7 @@ st.markdown(
         position: absolute;
         top: 10px;
         right: 10px;
-        width: 100px;  /* Ajusta el tamaño de la imagen */
+        width: 10px;  /* Ajusta el tamaño de la imagen */
     }
     </style>
     """, unsafe_allow_html=True
