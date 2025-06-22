@@ -69,6 +69,18 @@ def mostrar_productos():
         st.info("No hay productos registrados.")
         return
 
+    # Filtro por nombre de producto con barra buscadora
+    nombres_unicos = df["Nombre_producto"].dropna().unique()
+    if len(nombres_unicos) > 0:
+        nombre_seleccionado = st.selectbox(
+            "🔍 Buscar producto por nombre:",
+            options=["Todos"] + sorted(nombres_unicos.tolist()),
+            index=0
+        )
+
+        if nombre_seleccionado != "Todos":
+            df = df[df["Nombre_producto"] == nombre_seleccionado]
+
     # Agregar columna de eliminación
     df["Eliminar"] = False
     edited_df = st.data_editor(df, num_rows="fixed", use_container_width=True, key="editor_productos")
@@ -77,7 +89,6 @@ def mostrar_productos():
 
     with col1:
         if st.button("💾 Guardar Cambios"):
-            # Eliminamos la columna "Eliminar" antes de actualizar
             actualizar_productos(edited_df.drop(columns=["Eliminar"]))
 
     with col2:
