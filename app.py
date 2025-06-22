@@ -25,8 +25,9 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# ✅ Insertar la imagen con el estilo aplicado
-st.markdown('<img class="top-right" src="https://github.com/devilchez/mercaduca-1/raw/main/img/logo.png">', unsafe_allow_html=True)
+# Insertar el logo con el estilo aplicado
+st.markdown('<img class="logo-bottom-right" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">', unsafe_allow_html=True)
+
 
 
 # 🔐 Control de sesión
