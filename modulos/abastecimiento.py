@@ -6,73 +6,148 @@ def mostrar_abastecimiento():
     if "usuario" not in st.session_state:
         st.warning("⚠️ Debes iniciar sesión.")
         st.stop()
-    
-    usuario = st.session_state["usuario"]
-    st.header("Registrar abastecimiento")
+
+    st.header("📦 Registrar abastecimiento")
+
+    # Estado inicial para múltiples secciones
+    if "abastecimientos" not in st.session_state:
+        st.session_state.abastecimientos = [{"id": 0, "emprendimiento": None, "productos": []}]
+        st.session_state.contador_abast = 1
 
     try:
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener lista de emprendimientos
+        # Cargar emprendimientos y productos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
-        emprendedores = cursor.fetchall()
+        emprendimientos = cursor.fetchall()
+        emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        if not emprendedores:
-            st.warning("No hay emprendimientos registrados.")
-            return
+        cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
+        productos = cursor.fetchall()
+        productos_por_emprendimiento = {}
+        for idp, nombre, precio, id_emp in productos:
+            productos_por_emprendimiento.setdefault(id_emp, []).append({
+                "id": idp,
+                "nombre": nombre,
+                "precio": precio
+            })
 
-        # Diccionario nombre -> id
-        opciones = {nombre: emp_id for emp_id, nombre in emprendedores}
-        lista_emprendedores = list(opciones.keys())
+        # Recorrer secciones de abastecimiento
+        for seccion in st.session_state.abastecimientos:
+            sec_id = seccion["id"]
+            st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
 
-        # Select emprendedor
-        emprendedor = st.selectbox("Selecciona un emprendedor", lista_emprendedores, key="select_emprendedor")
-        id_emprendimiento = opciones[emprendedor]
+            opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
+            nombre_emp_actual = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "-- Selecciona --")
+            idx_emp_actual = opciones_emp.index(nombre_emp_actual) if nombre_emp_actual in opciones_emp else 0
 
-        # Obtener productos con sus ID y precio
-        cursor.execute("SELECT ID_Producto, Nombre_producto, Precio FROM PRODUCTO WHERE ID_Emprendimiento = %s", (id_emprendimiento,))
-        productos_data = cursor.fetchall()
+            emprendimiento_sel = st.selectbox(
+                f"Selecciona un emprendimiento",
+                opciones_emp,
+                index=idx_emp_actual,
+                key=f"abast_emp_{sec_id}"
+            )
 
-        if not productos_data:
-            st.warning("Este emprendedor aún no tiene productos registrados.")
-            return
+            if emprendimiento_sel == "-- Selecciona --":
+                st.info("Selecciona un emprendimiento para continuar.")
+                continue
 
-        # Diccionario nombre -> (ID, precio)
-        productos_dict = {row[1]: (row[0], row[2]) for row in productos_data}
-        nombres_productos = list(productos_dict.keys())
+            nuevo_id_emp = emprend_dict[emprendimiento_sel]
 
-        producto_seleccionado = st.selectbox("Selecciona el producto", nombres_productos, key="producto_seleccionado")
-        id_producto, precio_unitario = productos_dict[producto_seleccionado]
+            if nuevo_id_emp != seccion["emprendimiento"]:
+                seccion["emprendimiento"] = nuevo_id_emp
+                seccion["productos"] = [{"producto": None, "cantidad": 1}]
+                st.rerun()
 
-        st.markdown(f"**Código del producto:** `{id_producto}`")
-        st.markdown(f"**Precio unitario:** ${precio_unitario:.2f}")
+            id_emp = seccion["emprendimiento"]
+            productos_disponibles = productos_por_emprendimiento.get(id_emp, [])
 
-        cantidad = st.number_input("Cantidad a ingresar", min_value=1, max_value=1000, step=1, key="cantidad_producto")
-        st.markdown(f"**Precio total:** ${precio_unitario * cantidad:.2f}")
+            if not productos_disponibles:
+                st.warning("Este emprendimiento no tiene productos registrados.")
+                continue
 
-        if st.button("Registrar"):
+            opciones_productos = ["-- Selecciona --"] + [p["nombre"] for p in productos_disponibles]
+
+            for i, prod in enumerate(seccion["productos"]):
+                col1, col2 = st.columns([3, 1])
+
+                idx_prod_sel = 0
+                if prod["producto"] in opciones_productos:
+                    idx_prod_sel = opciones_productos.index(prod["producto"])
+
+                with col1:
+                    prod_sel = st.selectbox(
+                        f"Producto #{i + 1}",
+                        opciones_productos,
+                        index=idx_prod_sel,
+                        key=f"abast_producto_{sec_id}_{i}"
+                    )
+                with col2:
+                    cantidad = st.number_input(
+                        f"Cantidad #{i + 1}",
+                        min_value=1,
+                        value=prod.get("cantidad", 1),
+                        step=1,
+                        key=f"abast_cantidad_{sec_id}_{i}"
+                    )
+
+                seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
+                seccion["productos"][i]["cantidad"] = cantidad
+
+            if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_abast_{sec_id}"):
+                seccion["productos"].append({"producto": None, "cantidad": 1})
+                st.rerun()
+
+        if all(sec["emprendimiento"] is not None for sec in st.session_state.abastecimientos):
+            if st.button("➕ Agregar otro emprendimiento"):
+                nuevo_id = st.session_state.contador_abast
+                st.session_state.abastecimientos.append({"id": nuevo_id, "emprendimiento": None, "productos": []})
+                st.session_state.contador_abast += 1
+                st.rerun()
+
+        # Botón para registrar abastecimientos
+        if st.button("✅ Registrar abastecimiento"):
             try:
-                st.write("📌 Registrando abastecimiento...")
-                st.write(f"ID Emprendimiento: {id_emprendimiento}, ID Producto: {id_producto}, Cantidad: {cantidad}")
+                fecha = datetime.now()
+                for seccion in st.session_state.abastecimientos:
+                    id_emp = seccion["emprendimiento"]
+                    for p in seccion["productos"]:
+                        if not p["producto"]:
+                            continue
+                        prod_info = next((x for x in productos_por_emprendimiento[id_emp] if x["nombre"] == p["producto"]), None)
+                        if prod_info:
+                            id_prod = prod_info["id"]
+                            cantidad = p["cantidad"]
 
-                # Insertar en ABASTECIMIENTO
-                cursor.execute("""
-                    INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, ID_Producto, Cantidad, Fecha_ingreso)
-                    VALUES (%s, %s, %s, NOW())
-                """, (id_emprendimiento, id_producto, cantidad))
+                            # Insertar en ABASTECIMIENTO
+                            cursor.execute("""
+                                INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, Fecha_ingreso)
+                                VALUES (%s, %s)
+                            """, (id_emp, fecha))
+                            id_abast = cursor.lastrowid
 
-                # Insertar en INVENTARIO
-                cursor.execute("""
-                    INSERT INTO INVENTARIO (ID_Producto, Cantidad_ingresada, Stock, Fecha_ingreso)
-                    VALUES (%s, %s, %s, NOW())
-                """, (id_producto, cantidad, cantidad))
+                            # Insertar en tabla cruzada PRODUCTOXABASTECIMIENTO
+                            cursor.execute("""
+                                INSERT INTO PRODUCTOXABASTECIMIENTO (ID_Producto, id_abastecimiento, cantidad, precio_unitario)
+                                VALUES (%s, %s, %s, %s)
+                            """, (id_prod, id_abast, cantidad, prod_info["precio"]))
+
+                            # Insertar en INVENTARIO
+                            cursor.execute("""
+                                INSERT INTO INVENTARIO (ID_Producto, Cantidad_ingresada, Stock, Fecha_ingreso)
+                                VALUES (%s, %s, %s, %s)
+                            """, (id_prod, cantidad, cantidad, fecha))
 
                 con.commit()
-                st.success("✅ Abastecimiento registrado exitosamente.")
+                st.success("✅ Abastecimientos registrados correctamente.")
+                st.session_state.abastecimientos = [{"id": 0, "emprendimiento": None, "productos": []}]
+                st.session_state.contador_abast = 1
+                st.rerun()
 
             except Exception as e:
-                st.error(f"❌ Error al registrar en base de datos: {e}")
+                con.rollback()
+                st.error(f"❌ Error al registrar abastecimiento: {e}")
 
     except Exception as e:
         st.error(f"❌ Error general: {e}")
@@ -80,3 +155,4 @@ def mostrar_abastecimiento():
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
+
