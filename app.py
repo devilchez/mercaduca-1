@@ -13,26 +13,27 @@ from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
-# ✅ CSS para posicionar el logo en la esquina inferior derecha con tamaño controlado
+# ✅ CSS para colocar el logo en la esquina inferior izquierda
 st.markdown(
     """
     <style>
-    .logo-top-left {
+    .logo-bottom-left {
         position: fixed;
         bottom: 15px;
-        right: 15px;
-        width: 80px;  /* Ajusta este valor al tamaño deseado */
+        left: 15px;
+        width: 80px;  /* Tamaño del logo */
         z-index: 100;
     }
     </style>
     """, unsafe_allow_html=True
 )
 
-# ✅ Mostrar el logo con clase correcta
+# ✅ Mostrar el logo con clase correcta y ruta válida
 st.markdown(
-    '<img class="logo-top-left" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">',
+    '<img class="logo-bottom-left" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">',
     unsafe_allow_html=True
 )
+
 
 # 🔐 Control de sesión
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
