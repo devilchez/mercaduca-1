@@ -2,5 +2,5 @@
 base="light"  # Tema claro
 primaryColor="#28a745"  # Verde
 backgroundColor="#ffffff"  # Blanco para el fondo
-secondaryBackgroundColor="#2e4d26"  # Fondo de la barra lateral blanco suave
+secondaryBackgroundColor="#77dd77"  # Fondo de la barra lateral blanco suave
 textColor="#212529"  # Texto oscuro para buen contraste
