@@ -1,6 +1,2 @@
 [theme]
-base="dark"  # Tema oscuro
-primaryColor="#333333"  # Gris oscuro para los elementos principales
-backgroundColor="#2c2c2c"  # Fondo gris oscuro para el cuerpo
-secondaryBackgroundColor="#1a1a1a"  # Fondo gris oscuro para la barra lateral
-textColor="#ffffff"  # Texto blanco para el cuerpo
+base="dark"
