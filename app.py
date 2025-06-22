@@ -20,10 +20,18 @@ st.markdown(
         text-align: center;
         font-size: 4em;
         font-weight: bold;
-        color:#2e4d26;
+        color: #2e4d26;
+        margin-bottom: 0.1em;
+    }
+    .subtext {
+        text-align: center;
+        font-size: 1.2em;
+        color: #777777;
+        margin-top: 0;
     }
     </style>
-    <div class="centered-title">MERCADUCA</div>
+    <div class="centered-title">Mercagestión</div>
+    <div class="subtext">para MERCADUCA</div>
     """,
     unsafe_allow_html=True
 )
