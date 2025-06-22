@@ -20,18 +20,24 @@ else:
     tipo = st.session_state["tipo_usuario"]
 
     st.sidebar.title("Menú")
-    opcion = st.sidebar.selectbox(
-        "Ir a:", [
-            "Ventas",
-            "Abastecimiento",
-            "Registrar Emprendedor",
-            "Gestionar Emprendedores",
-            "Registrar Producto",
-            "Gestionar Productos",     # ✅ Nueva opción en el menú
-            "Cerrar sesión"
-        ]
-    )
 
+    opcion = None
+    if st.sidebar.button("Ventas"):
+        opcion = "Ventas"
+    elif st.sidebar.button("Abastecimiento"):
+        opcion = "Abastecimiento"
+    elif st.sidebar.button("Registrar Emprendedor"):
+        opcion = "Registrar Emprendedor"
+    elif st.sidebar.button("Gestionar Emprendedores"):
+        opcion = "Gestionar Emprendedores"
+    elif st.sidebar.button("Registrar Producto"):
+        opcion = "Registrar Producto"
+    elif st.sidebar.button("Gestionar Productos"):
+        opcion = "Gestionar Productos"
+    elif st.sidebar.button("Cerrar sesión"):
+        opcion = "Cerrar sesión"
+
+    # 🔄 Redirigir según la opción seleccionada
     if opcion == "Ventas" and tipo == "Administrador":
         mostrar_ventas()
     elif opcion == "Abastecimiento" and tipo in ["Asistente", "Administrador"]:
@@ -42,11 +48,10 @@ else:
         mostrar_emprendimientos()
     elif opcion == "Registrar Producto" and tipo in ["Asistente", "Administrador"]:
         registrar_producto()
-    elif opcion == "Gestionar Productos" and tipo in ["Asistente", "Administrador"]:  # ✅ Gestión de productos
+    elif opcion == "Gestionar Productos" and tipo in ["Asistente", "Administrador"]:
         mostrar_productos()
     elif opcion == "Cerrar sesión":
         st.session_state.clear()
         st.rerun()
-    else:
+    elif opcion is not None:
         st.warning("No tienes permiso para acceder a esta sección.")
-
