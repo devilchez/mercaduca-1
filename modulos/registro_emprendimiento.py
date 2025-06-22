@@ -1,40 +1,33 @@
 import streamlit as st
+import pandas as pd
 from modulos.config.conexion import obtener_conexion
 
-def registrar_emprendimiento():
-    if "usuario" not in st.session_state:
-        st.warning("⚠️ Debes iniciar sesión.")
-        st.stop()
+def obtener_emprendimientos():
+    con = obtener_conexion()
+    df = pd.read_sql("SELECT * FROM EMPRENDIMIENTO", con)
+    con.close()
+    return df
 
-    st.header("Registrar nuevo emprendimiento")
+def actualizar_emprendimiento(df):
+    con = obtener_conexion()
+    cursor = con.cursor()
+    for _, row in df.iterrows():
+        cursor.execute("""
+            UPDATE EMPRENDIMIENTO 
+            SET Nombre_emprendimiento=%s, Nombre_emprendedor=%s, Telefono=%s, Cuenta_bancaria=%s, Estado=%s 
+            WHERE ID_Emprendimiento=%s
+        """, (row["Nombre_emprendimiento"], row["Nombre_emprendedor"], row["Telefono"], 
+              row["Cuenta_bancaria"], row["Estado"], row["ID_Emprendimiento"]))
+    con.commit()
+    con.close()
+    st.success("✅ Cambios guardados correctamente.")
 
-    # Formulario
-    id_emprendimiento = st.text_input("ID del Emprendimiento")
-    nombre_emprendimiento = st.text_input("Nombre del emprendimiento")
-    nombre_emprendedor = st.text_input("Nombre del emprendedor")
-    telefono = st.text_input("Teléfono")
-    cuenta_bancaria = st.text_input("Cuenta bancaria")
-    estado = st.selectbox("Estado", ["Activo", "Inactivo"])
+def mostrar_emprendimientos():
+    st.header("Emprendimientos registrados")
+    df = obtener_emprendimientos()
+    edited_df = st.data_editor(df, num_rows="fixed")
+    if st.button("Guardar Cambios"):
+        actualizar_emprendimiento(edited_df)
 
-    if st.button("Registrar"):
-        if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and telefono and cuenta_bancaria and estado):
-            st.warning("⚠️ Por favor, completa todos los campos.")
-        else:
-            try:
-                con = obtener_conexion()
-                cursor = con.cursor()
-
-                # Insertar en EMPRENDIMIENTO
-                cursor.execute("""
-                    INSERT INTO EMPRENDIMIENTO (ID_Emprendimiento, Nombre_emprendimiento, Nombre_emprendedor, Telefono, Cuenta_bancaria, Estado)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (id_emprendimiento, nombre_emprendimiento, nombre_emprendedor, telefono, cuenta_bancaria, estado))
-
-                con.commit()
-                st.success("✅ Emprendimiento registrado correctamente.")
-
-            except Exception as e:
-                st.error(f"❌ Error al registrar: {e}")
-            finally:
-                if 'cursor' in locals(): cursor.close()
-                if 'con' in locals(): con.close()
+# Llama esta funcion al final de tu flujo de registro para mostrar y permitir la edición.
+mostrar_emprendimientos()
