@@ -9,20 +9,14 @@ def mostrar_abastecimiento():
 
     st.header("📦 Registrar abastecimiento")
 
-    # Estado inicial
     if "abast_secciones" not in st.session_state:
-        st.session_state.abast_secciones = [{
-            "id": 0,
-            "emprendimiento": None,
-            "productos": []
-        }]
+        st.session_state.abast_secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
         st.session_state.abast_contador = 1
 
     try:
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Cargar datos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
@@ -69,20 +63,14 @@ def mostrar_abastecimiento():
 
             for i, prod in enumerate(seccion["productos"]):
                 col1, col2 = st.columns([3, 1])
-
-                idx_prod_sel = 0
-                if prod["producto"] in opciones_productos:
-                    idx_prod_sel = opciones_productos.index(prod["producto"])
-
-                key_prod = f"abast_producto_{sec_id}_{i}"
-                key_cant = f"abast_cantidad_{sec_id}_{i}"
+                idx_prod_sel = opciones_productos.index(prod["producto"]) if prod["producto"] in opciones_productos else 0
 
                 with col1:
                     prod_sel = st.selectbox(
                         f"Producto #{i + 1}",
                         opciones_productos,
                         index=idx_prod_sel,
-                        key=key_prod
+                        key=f"abast_producto_{sec_id}_{i}"
                     )
                 with col2:
                     cantidad = st.number_input(
@@ -90,14 +78,12 @@ def mostrar_abastecimiento():
                         min_value=1,
                         value=prod.get("cantidad", 1),
                         format="%d",
-                        key=key_cant
+                        key=f"abast_cantidad_{sec_id}_{i}"
                     )
-
 
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
 
-            # Límite de productos por sección
             if len(seccion["productos"]) < 200:
                 if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_abast_{sec_id}"):
                     seccion["productos"].append({"producto": None, "cantidad": 1})
@@ -105,14 +91,13 @@ def mostrar_abastecimiento():
             else:
                 st.warning("⚠️ Límite de 200 productos alcanzado para este emprendimiento.")
 
-            # Agregar a la lista final
             for p in seccion["productos"]:
                 if p["producto"]:
                     info = next((x for x in productos_disponibles if x["nombre"] == p["producto"]), None)
                     if info:
                         productos_abastecer.append({
                             "id_emprendimiento": seccion["emprendimiento"],
-                            "id_producto": info["id"],
+                            "id_producto": str(info["id"]),
                             "cantidad": p["cantidad"],
                             "precio": info["precio"]
                         })
@@ -120,11 +105,7 @@ def mostrar_abastecimiento():
         if all(sec["emprendimiento"] is not None for sec in st.session_state.abast_secciones):
             if st.button("➕ Agregar otro emprendimiento"):
                 nuevo_id = st.session_state.abast_contador
-                st.session_state.abast_secciones.append({
-                    "id": nuevo_id,
-                    "emprendimiento": None,
-                    "productos": []
-                })
+                st.session_state.abast_secciones.append({"id": nuevo_id, "emprendimiento": None, "productos": []})
                 st.session_state.abast_contador += 1
                 st.rerun()
 
@@ -138,21 +119,35 @@ def mostrar_abastecimiento():
                 try:
                     agrupados = {}
                     for p in productos_abastecer:
-                        id_emp = p["id_emprendimiento"]
-                        agrupados.setdefault(id_emp, []).append(p)
+                        agrupados.setdefault(p["id_emprendimiento"], []).append(p)
 
                     for id_emp, productos in agrupados.items():
-                        cursor.execute(
-                            "INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, Fecha_ingreso) VALUES (%s, NOW())",
-                            (id_emp,)
-                        )
+                        cursor.execute("INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, Fecha_ingreso) VALUES (%s, NOW())", (id_emp,))
                         id_abastecimiento = cursor.lastrowid
 
                         for prod in productos:
-                            cursor.execute(
-                                "INSERT INTO PRODUCTOXABASTECIMIENTO (ID_Producto, id_abastecimiento, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
-                                (prod["id_producto"], id_abastecimiento, prod["cantidad"], prod["precio"])
-                            )
+                            cursor.execute("""
+                                INSERT INTO PRODUCTOXABASTECIMIENTO (ID_Producto, id_abastecimiento, cantidad, precio_unitario)
+                                VALUES (%s, %s, %s, %s)
+                            """, (prod["id_producto"], id_abastecimiento, prod["cantidad"], prod["precio"]))
+
+                            cursor.execute("""
+                                INSERT INTO INVENTARIO (
+                                    ID_Abastecimiento,
+                                    ID_Producto,
+                                    Fecha_ingreso,
+                                    Cantidad_ingresada,
+                                    Cantidad_salida,
+                                    Stock,
+                                    Descripcion,
+                                    Fecha_salida
+                                ) VALUES (%s, %s, NOW(), %s, 0, %s, NULL, NULL)
+                            """, (
+                                id_abastecimiento,
+                                prod["id_producto"],
+                                prod["cantidad"],
+                                prod["cantidad"]
+                            ))
 
                     con.commit()
                     st.success("✅ Abastecimiento registrado correctamente.")
@@ -168,5 +163,13 @@ def mostrar_abastecimiento():
         st.error(f"❌ Error general: {e}")
 
     finally:
-        if 'cursor' in locals(): cursor.close()
-        if 'con' in locals(): con.close()
+        try:
+            if 'cursor' in locals() and cursor is not None:
+                cursor.close()
+        except:
+            pass
+        try:
+            if 'con' in locals() and con is not None:
+                con.close()
+        except:
+            pass
