@@ -43,14 +43,11 @@ def actualizar_productos(df):
     else:
         st.warning("⚠️ No hubo registros actualizados. Verifica que los ID coincidan.")
 
-def mostrar_productos():
-    """Muestra la tabla de PRODUCTO para permitir la edición desde la web."""
-    st.header("📦 Productos")
-    df = obtener_productos()
-    edited_df = st.data_editor(df, num_rows="fixed")
-    if st.button("Guardar Cambios"):
-        actualizar_productos(edited_df)
+def eliminar_productos(ids_a_eliminar):
+    """Elimina productos por sus ID desde la base de datos."""
+    con = obtener_conexion()
+    cursor = con.cursor()
+    formato_ids = ','.join(['%s'] * len(ids_a_eliminar))
 
-# Para ejecución directa
-if __name__ == "__main__":
-    mostrar_productos()
+    cursor.e
+
