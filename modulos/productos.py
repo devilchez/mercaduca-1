@@ -49,5 +49,45 @@ def eliminar_productos(ids_a_eliminar):
     cursor = con.cursor()
     formato_ids = ','.join(['%s'] * len(ids_a_eliminar))
 
-    cursor.e
+    cursor.execute(f"DELETE FROM PRODUCTO WHERE ID_Producto IN ({formato_ids})", tuple(ids_a_eliminar))
+    registros_eliminados = cursor.rowcount
 
+    con.commit()
+    con.close()
+
+    if registros_eliminados > 0:
+        st.success(f"🗑️ Se eliminaron {registros_eliminados} producto(s).")
+    else:
+        st.warning("⚠️ No se eliminó ningún producto. Revisa si los ID existen.")
+
+def mostrar_productos():
+    """Muestra la tabla de PRODUCTO para edición y eliminación."""
+    st.header("📦 Productos")
+
+    df = obtener_productos()
+    if df.empty:
+        st.info("No hay productos registrados.")
+        return
+
+    # Agregar columna de eliminación
+    df["Eliminar"] = False
+    edited_df = st.data_editor(df, num_rows="fixed", use_container_width=True, key="editor_productos")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("💾 Guardar Cambios"):
+            # Eliminamos la columna "Eliminar" antes de actualizar
+            actualizar_productos(edited_df.drop(columns=["Eliminar"]))
+
+    with col2:
+        if st.button("🗑️ Eliminar seleccionados"):
+            productos_a_eliminar = edited_df[edited_df["Eliminar"] == True]["ID_Producto"].tolist()
+            if productos_a_eliminar:
+                eliminar_productos(productos_a_eliminar)
+            else:
+                st.info("Selecciona al menos un producto para eliminar.")
+
+# Para ejecución directa
+if __name__ == "__main__":
+    mostrar_productos()
