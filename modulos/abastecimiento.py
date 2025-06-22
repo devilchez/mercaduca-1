@@ -89,9 +89,10 @@ def mostrar_abastecimiento():
                         f"Cantidad #{i + 1}",
                         min_value=1,
                         value=prod.get("cantidad", 1),
-                        step=1,
+                        format="%d",
                         key=key_cant
                     )
+
 
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
