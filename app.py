@@ -48,7 +48,7 @@ st.markdown(
         position: fixed;
         bottom: 15px;
         left: 15px;
-        width: 80px;  /* Tamaño del logo */
+        width: 100px;  /* Tamaño del logo */
         z-index: 100;
     }
     </style>
