@@ -26,7 +26,7 @@ st.markdown(
 )
 
 # ✅ Insertar la imagen con el estilo aplicado
-st.markdown('<img class="top-right" src="https://github.com/devilchez/mercaduca-1/raw/main/img/logo mercaduca.jpeg">', unsafe_allow_html=True)
+st.markdown('<img class="top-right" src="https://github.com/devilchez/mercaduca-1/raw/main/img/logo.png">', unsafe_allow_html=True)
 
 
 # 🔐 Control de sesión
