@@ -23,7 +23,7 @@ st.markdown(
         font-size: 4em;
         font-weight: bold;
         color: #4b7045;
-        margin-bottom: 0.1em;
+        margin-bottom: 0;
         font-family: 'Montserrat', sans-serif;
     }
     .subtext {
