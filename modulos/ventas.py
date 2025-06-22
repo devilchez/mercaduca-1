@@ -39,7 +39,7 @@ def mostrar_ventas():
         # Mostrar secciones de emprendimientos y productos
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
-            st.markdown(f"## 🧩 Emprendimiento #{sec_id + 1}")
+            st.markdown(f"## Emprendimiento #{sec_id + 1}")
 
             # Mostrar selectbox siempre
             opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
