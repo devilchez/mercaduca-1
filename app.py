@@ -32,7 +32,7 @@ st.markdown(
     }
     </style>
     <div class="centered-title">Mercagestión</div>
-    <div class="subtext">para MERCADUCA</div>
+    <div class="subtext">Para MERCADUCA</div>
     """,
     unsafe_allow_html=True
 )
