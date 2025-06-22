@@ -9,7 +9,7 @@ from modulos.abastecimiento import mostrar_abastecimiento
 from modulos.registro_emprendimiento import registrar_emprendimiento
 from modulos.registro_producto import registrar_producto
 from modulos.emprendimientos import mostrar_emprendimientos
-from modulos.productos import mostrar_productos  # ✅ Importamos la función para gestionar productos
+from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
@@ -19,14 +19,7 @@ if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
 else:
     tipo = st.session_state["tipo_usuario"]
 
-    # 🔲 Botón de cerrar sesión en la esquina superior derecha
-    col1, col2 = st.columns([9, 1])
-    with col2:
-        if st.button("🔓 Cerrar sesión"):
-            st.session_state.clear()
-            st.rerun()
-
-    # 📌 Menú lateral con radio
+    # 📌 Menú lateral
     st.sidebar.title("Menú")
     opcion = st.sidebar.radio(
         "Ir a:",
@@ -39,6 +32,15 @@ else:
             "Gestionar Productos",
         ]
     )
+
+    # Espacio para separar el botón inferior
+    st.sidebar.markdown("<br><hr><br>", unsafe_allow_html=True)
+
+    # 🔲 Botón de cerrar sesión al final de la barra lateral
+    if st.sidebar.button("🔓 Cerrar sesión"):
+        st.session_state.clear()
+        st.rerun()
+
 
     # ▶️ Ejecutar módulo correspondiente
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
