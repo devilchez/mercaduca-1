@@ -12,8 +12,7 @@ from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
-
-# ✅ CSS para colocar el logo en la esquina inferior izquierda
+st.title("MERCADUCA")
 st.markdown(
     """
     <style>
