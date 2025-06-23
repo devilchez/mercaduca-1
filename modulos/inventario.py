@@ -4,7 +4,7 @@ from datetime import datetime
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_inventario():
-    st.header("Inventario")
+    st.header("📟 Inventario")
 
     # Filtros de fecha
     col1, col2 = st.columns(2)
