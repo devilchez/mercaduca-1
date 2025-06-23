@@ -53,16 +53,13 @@ def reporte_ventas():
             col1, col2 = st.columns([6, 1])
             with col1:
                 st.markdown(
-                    f"""
-                    **Venta ID:** {row['ID_Venta']}  
-                    **Emprendimiento:** {row['Emprendimiento']}  
-                    **Producto:** {row['Producto']}  
-                    **Cantidad:** {row['Cantidad']}  
-                    **Precio Unitario:** ${row['Precio Unitario']:.2f}  
-                    **Total:** ${row['Total']:.2f}  
-                    """
+                    f"**Venta ID:** {row['ID_Venta']}  \n"
+                    f"**Emprendimiento:** {row['Emprendimiento']}  \n"
+                    f"**Producto:** {row['Producto']}  \n"
+                    f"**Cantidad:** {row['Cantidad']}  \n"
+                    f"**Precio Unitario:** ${row['Precio Unitario']:.2f}  \n"
+                    f"**Total:** ${row['Total']:.2f}  "
                 )
-
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
                     try:
@@ -70,6 +67,11 @@ def reporte_ventas():
                             "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                             (row['ID_Venta'], row['ID_Producto'])
                         )
+                        con.commit()  # Asegúrate de confirmar los cambios en la base de datos
+                        st.success("¡Venta eliminada exitosamente!")
+                    except Exception as e:
+                        st.error(f"Error al eliminar la venta: {e}")
+
 
                         # Si ya no hay productos en esa venta, eliminar la venta
                         cursor.execute(
