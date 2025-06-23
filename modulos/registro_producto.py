@@ -2,10 +2,6 @@ import streamlit as st
 from modulos.config.conexion import obtener_conexion
 
 def registrar_producto():
-    if "usuario" not in st.session_state:
-        st.warning("⚠️ Debes iniciar sesión.")
-        st.stop()
-
     st.header("📓 Registrar nuevo producto")
 
     # Inicializar estado si no existe
@@ -16,7 +12,7 @@ def registrar_producto():
     try:
         con = obtener_conexion()
         cursor = con.cursor()
-        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
+        cursor.execute("SELECT ID_Emprendimiento, Nombre FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         cursor.close()
         con.close()
@@ -29,17 +25,17 @@ def registrar_producto():
         return
 
     # Crear diccionario {nombre: id}
-    opciones = {nombre: id_ for id_, nombre in emprendimientos}
+    opciones = {nombre: id_ for id_, nombre_emprendimiento in emprendimientos}
     lista_nombres = ["— Selecciona —"] + list(opciones.keys())
 
-    # Modificar st.session_state.emprendimiento_seleccionado antes de crear el selectbox
+    # Verificar si la selección está disponible, si no se restablece
     if st.session_state.emprendimiento_seleccionado not in lista_nombres:
         st.session_state.emprendimiento_seleccionado = "— Selecciona —"
 
-    # Determinar índice del selectbox
+    # Determinar el índice de la opción seleccionada
     indice = lista_nombres.index(st.session_state.emprendimiento_seleccionado)
 
-    # Selectbox
+    # Renderizar el selectbox
     seleccion = st.selectbox(
         "Selecciona un emprendimiento",
         lista_nombres,
@@ -82,12 +78,15 @@ def registrar_producto():
                 con.commit()
                 st.success("✅ Producto registrado correctamente.")
 
-                # Reiniciar selección y recargar módulo
+                # Reiniciar sesión (similar a la lógica de ventas)
                 st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+
+                # Usar st.rerun() para reiniciar la página
                 st.rerun()
 
             except Exception as e:
-                st.error(f"❌ Error al registrar: {e}")
+                st.error(f"❌ Error al registrar el producto: {e}")
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
+
