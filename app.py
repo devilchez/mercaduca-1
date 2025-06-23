@@ -101,7 +101,7 @@ else:
         registrar_emprendimiento()
     elif opcion == "Gestionar Emprendedores" and tipo in ["Administrador"]:
         mostrar_emprendimientos()
-    elif opcion == "Registrar Producto" and tipo in [["Administrador"]:
+    elif opcion == "Registrar Producto" and tipo in ["Administrador"]:
         registrar_producto()
     elif opcion == "Gestionar Productos" and tipo in ["Administrador"]:
         mostrar_productos()
