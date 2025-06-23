@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_inventario():
@@ -12,7 +12,7 @@ def mostrar_inventario():
         fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1))
     with col2:
         fecha_fin = st.date_input("Hasta", value=datetime.today())
-
+        
     if fecha_inicio > fecha_fin:
         st.warning("⚠️ La fecha de inicio no puede ser mayor que la fecha de fin.")
         return
@@ -56,6 +56,27 @@ def mostrar_inventario():
             st.dataframe(df_stock)
         else:
             st.info("No hay stock disponible registrado.")
+
+        # Mostrar productos próximos a vencer
+        # Definir el rango de fecha de vencimiento: productos que vencen en los próximos 30 días
+        fecha_limite = datetime.today() + timedelta(days=30)
+
+        cursor.execute("""
+            SELECT e.Nombre_emprendimiento, p.Nombre_producto, i.Cantidad_ingresada, i.Fecha_vencimiento
+            FROM INVENTARIO i
+            JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
+            JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
+            WHERE i.Fecha_vencimiento BETWEEN NOW() AND %s
+            ORDER BY i.Fecha_vencimiento ASC
+        """, (fecha_limite,))
+        productos_proximos_vencer = cursor.fetchall()
+
+        if productos_proximos_vencer:
+            df_proximos_vencer = pd.DataFrame(productos_proximos_vencer, columns=["Emprendimiento", "Producto", "Cantidad", "Fecha de Vencimiento"])
+            st.subheader("📅 Productos Próximos a Vencer (Próximos 30 días)")
+            st.dataframe(df_proximos_vencer)
+        else:
+            st.info("No hay productos próximos a vencer en los próximos 30 días.")
 
     except Exception as e:
         st.error(f"❌ Error al cargar el inventario: {e}")
