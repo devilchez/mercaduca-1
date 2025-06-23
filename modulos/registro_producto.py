@@ -16,7 +16,7 @@ def registrar_producto():
     try:
         con = obtener_conexion()
         cursor = con.cursor()
-        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
+        cursor.execute("SELECT ID_Emprendimiento, Nombre FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         cursor.close()
         con.close()
@@ -32,11 +32,12 @@ def registrar_producto():
     opciones = {nombre: id_ for id_, nombre in emprendimientos}
     lista_nombres = ["— Selecciona —"] + list(opciones.keys())
 
-    # Determinar índice seguro
-    if st.session_state.emprendimiento_seleccionado in opciones:
-        indice = lista_nombres.index(st.session_state.emprendimiento_seleccionado)
-    else:
-        indice = 0
+    # Modificar st.session_state.emprendimiento_seleccionado antes de crear el selectbox
+    if st.session_state.emprendimiento_seleccionado not in lista_nombres:
+        st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+
+    # Determinar índice del selectbox
+    indice = lista_nombres.index(st.session_state.emprendimiento_seleccionado)
 
     # Selectbox
     seleccion = st.selectbox(
@@ -83,7 +84,7 @@ def registrar_producto():
 
                 # Reiniciar selección y recargar módulo
                 st.session_state.emprendimiento_seleccionado = "— Selecciona —"
-                st.rerun()
+                st.experimental_rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
