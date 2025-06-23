@@ -93,17 +93,17 @@ else:
 
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
-    elif opcion == "Reporte de ventas" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
         reporte_ventas()
-    elif opcion == "Abastecimiento" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Abastecimiento" and tipo in ["Administrador"]:
         mostrar_abastecimiento()
-    elif opcion == "Registrar Emprendedor" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Registrar Emprendedor" and tipo in [["Administrador"]:
         registrar_emprendimiento()
-    elif opcion == "Gestionar Emprendedores" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Gestionar Emprendedores" and tipo in ["Administrador"]:
         mostrar_emprendimientos()
-    elif opcion == "Registrar Producto" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Registrar Producto" and tipo in [["Administrador"]:
         registrar_producto()
-    elif opcion == "Gestionar Productos" and tipo in ["Asistente", "Administrador"]:
+    elif opcion == "Gestionar Productos" and tipo in ["Administrador"]:
         mostrar_productos()
     elif opcion == "Inventario" and tipo in ["Administrador"]:
         mostrar_inventario()
