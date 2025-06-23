@@ -28,7 +28,7 @@ def registrar_producto():
     opciones = {nombre: id_ for id_, nombre in emprendimientos}
     lista_nombres = ["— Selecciona —"] + list(opciones.keys())
 
-    # Restablecer st.session_state.emprendimiento_seleccionado antes de renderizar el selectbox
+    # Aquí restablecemos el valor de st.session_state.emprendimiento_seleccionado antes de crear el selectbox
     if st.session_state.emprendimiento_seleccionado not in lista_nombres:
         st.session_state.emprendimiento_seleccionado = "— Selecciona —"
 
