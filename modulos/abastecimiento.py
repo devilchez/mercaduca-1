@@ -55,14 +55,14 @@ def mostrar_abastecimiento():
             nuevo_id_emp = emprend_dict[emprendimiento_sel]
             if nuevo_id_emp != seccion["emprendimiento"]:
                 seccion["emprendimiento"] = nuevo_id_emp
-                seccion["productos"] = [{"producto": None, "cantidad": 1}]
+                seccion["productos"] = [{"producto": None, "cantidad": 1, "fecha_vencimiento": datetime.today().date()}]
                 st.rerun()
 
             productos_disponibles = productos_por_emprendimiento.get(nuevo_id_emp, [])
             opciones_productos = ["-- Selecciona --"] + [p["nombre"] for p in productos_disponibles]
 
             for i, prod in enumerate(seccion["productos"]):
-                col1, col2 = st.columns([3, 1])
+                col1, col2, col3 = st.columns([3, 1, 2])
                 idx_prod_sel = opciones_productos.index(prod["producto"]) if prod["producto"] in opciones_productos else 0
 
                 with col1:
@@ -80,13 +80,20 @@ def mostrar_abastecimiento():
                         format="%d",
                         key=f"abast_cantidad_{sec_id}_{i}"
                     )
+                with col3:
+                    fecha_vencimiento = st.date_input(
+                        f"Vence el #{i + 1}",
+                        value=prod.get("fecha_vencimiento", datetime.today().date()),
+                        key=f"abast_fecha_venc_{sec_id}_{i}"
+                    )
 
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
+                seccion["productos"][i]["fecha_vencimiento"] = fecha_vencimiento
 
             if len(seccion["productos"]) < 200:
                 if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_abast_{sec_id}"):
-                    seccion["productos"].append({"producto": None, "cantidad": 1})
+                    seccion["productos"].append({"producto": None, "cantidad": 1, "fecha_vencimiento": datetime.today().date()})
                     st.rerun()
             else:
                 st.warning("⚠️ Límite de 200 productos alcanzado para este emprendimiento.")
@@ -99,7 +106,8 @@ def mostrar_abastecimiento():
                             "id_emprendimiento": seccion["emprendimiento"],
                             "id_producto": str(info["id"]),
                             "cantidad": p["cantidad"],
-                            "precio": info["precio"]
+                            "precio": info["precio"],
+                            "fecha_vencimiento": p["fecha_vencimiento"]
                         })
 
         if all(sec["emprendimiento"] is not None for sec in st.session_state.abast_secciones):
@@ -113,7 +121,7 @@ def mostrar_abastecimiento():
             st.markdown("---")
             st.markdown("### 🧾 Resumen de productos a abastecer:")
             for p in productos_abastecer:
-                st.write(f"🟩 Emprendimiento {p['id_emprendimiento']} - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio']:.2f}")
+                st.write(f"🟩 Emprendimiento {p['id_emprendimiento']} - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio']:.2f} - Vence: {p['fecha_vencimiento']}")
 
             if st.button("✅ Registrar abastecimiento"):
                 try:
@@ -140,13 +148,15 @@ def mostrar_abastecimiento():
                                     Cantidad_salida,
                                     Stock,
                                     Descripcion,
-                                    Fecha_salida
-                                ) VALUES (%s, %s, NOW(), %s, 0, %s, NULL, NULL)
+                                    Fecha_salida,
+                                    Fecha_vencimiento
+                                ) VALUES (%s, %s, NOW(), %s, 0, %s, NULL, NULL, %s)
                             """, (
                                 id_abastecimiento,
                                 prod["id_producto"],
                                 prod["cantidad"],
-                                prod["cantidad"]
+                                prod["cantidad"],
+                                prod["fecha_vencimiento"]
                             ))
 
                     con.commit()
