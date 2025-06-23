@@ -8,7 +8,6 @@ def obtener_productos():
     df = pd.read_sql("SELECT * FROM PRODUCTO", con)
 
     # Convertimos las fechas a tipo datetime (para evitar errores en el editor)
-    df["Fecha_entrada"] = pd.to_datetime(df["Fecha_entrada"], errors="coerce")
     df["Fecha_vencimiento"] = pd.to_datetime(df["Fecha_vencimiento"], errors="coerce")
 
     con.close()
