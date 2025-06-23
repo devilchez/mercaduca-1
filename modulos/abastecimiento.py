@@ -82,20 +82,22 @@ def mostrar_abastecimiento():
                         key=f"abast_cantidad_{sec_id}_{i}"
                     )
 
-                # Aquí comprobamos si el producto es perecedero y mostramos la fecha
+                # Consultar el tipo de producto solo después de que el usuario selecciona el producto
                 if prod_sel != "-- Selecciona --":
-                    # Obtener si el producto es perecedero
+                    # Obtener el producto seleccionado
                     producto_info = next((p for p in productos_disponibles if p["nombre"] == prod_sel), None)
-                    if producto_info and producto_info["tipo_producto"] == "Perecedero":  # Verificamos si es perecedero
-                        with col3:
-                            fecha_vencimiento = st.date_input(
-                                f"Vence el #{i + 1}",
-                                value=prod.get("fecha_vencimiento", datetime.today().date()),
-                                key=f"abast_fecha_venc_{sec_id}_{i}"
-                            )
-                        seccion["productos"][i]["fecha_vencimiento"] = fecha_vencimiento
-                    else:
-                        seccion["productos"][i]["fecha_vencimiento"] = None  # No es perecedero, no se necesita fecha
+                    if producto_info:
+                        # Verificar si el producto es perecedero
+                        if producto_info["tipo_producto"] == "Perecedero":  # Verificamos si es perecedero
+                            with col3:
+                                fecha_vencimiento = st.date_input(
+                                    f"Vence el #{i + 1}",
+                                    value=prod.get("fecha_vencimiento", datetime.today().date()),
+                                    key=f"abast_fecha_venc_{sec_id}_{i}"
+                                )
+                            seccion["productos"][i]["fecha_vencimiento"] = fecha_vencimiento
+                        else:
+                            seccion["productos"][i]["fecha_vencimiento"] = None  # No es perecedero, no se necesita fecha
 
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
@@ -183,4 +185,3 @@ def mostrar_abastecimiento():
                 con.close()
         except:
             pass
-
