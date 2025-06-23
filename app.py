@@ -73,7 +73,7 @@ else:
     opcion = st.sidebar.radio(
         "Ir a:",
         [
-            "Ventas"
+            "Ventas",
             "Reporte de ventas",
             "Abastecimiento",
             "Registrar Emprendimiento",
