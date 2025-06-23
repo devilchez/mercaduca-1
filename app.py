@@ -10,6 +10,7 @@ from modulos.registro_emprendimiento import registrar_emprendimiento
 from modulos.registro_producto import registrar_producto
 from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
+from modulos.reporte_ventas import reporte_ventas
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
@@ -72,7 +73,8 @@ else:
     opcion = st.sidebar.radio(
         "Ir a:",
         [
-            "Ventas",
+            "Ventas"
+            "Reporte de ventas",
             "Abastecimiento",
             "Registrar Emprendimiento",
             "Gestionar Emprendimiento",
@@ -99,5 +101,8 @@ else:
         registrar_producto()
     elif opcion == "Gestionar Productos" and tipo in ["Administrador"]:
         mostrar_productos()
+    elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
+        reporte_ventas()
+
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
