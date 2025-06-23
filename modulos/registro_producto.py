@@ -18,12 +18,10 @@ def registrar_producto():
     id_emprendimiento = st.text_input("ID del Emprendimiento (asociado)")
 
     # Variables vacías por defecto
-    fecha_entrada = None
     fecha_vencimiento = None
 
     # Mostrar fechas solo si es perecedero
     if tipo_producto == "Perecedero":
-        fecha_entrada = st.date_input("Fecha de entrada", value=date.today())
         fecha_vencimiento = st.date_input("Fecha de vencimiento")
 
     if st.button("Registrar"):
@@ -39,13 +37,13 @@ def registrar_producto():
                     INSERT INTO PRODUCTO (
                         ID_Producto, Nombre_producto, Descripcion, Precio,
                         Tipo_producto, ID_Emprendimiento,
-                        Fecha_entrada, Fecha_vencimiento
+                        Fecha_vencimiento
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     id_producto, nombre_producto, descripcion, precio,
                     tipo_producto, id_emprendimiento,
-                    fecha_entrada, fecha_vencimiento
+                    fecha_vencimiento
                 ))
 
                 con.commit()
