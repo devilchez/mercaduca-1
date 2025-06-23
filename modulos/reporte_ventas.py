@@ -53,7 +53,7 @@ def reporte_ventas():
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False, sheet_name='ReporteVentas')
-                writer.save()
+
             st.download_button(
                 label="⬇️ Descargar Excel",
                 data=excel_buffer.getvalue(),
