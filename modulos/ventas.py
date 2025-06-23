@@ -155,13 +155,15 @@ def mostrar_ventas():
                         )
 
                         restante = cantidad_vendida
+
+                        # Seleccionamos los productos con Stock > 0 y la Fecha_vencimiento más cercana
                         cursor.execute(
-                            "SELECT ID_Inventario, Stock FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_ingreso ASC",
+                            "SELECT ID_Inventario, Stock, Fecha_vencimiento FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_vencimiento ASC",
                             (id_producto,)
                         )
                         inventario = cursor.fetchall()
 
-                        for id_inventario, stock in inventario:
+                        for id_inventario, stock, fecha_vencimiento in inventario:
                             if restante <= 0:
                                 break
                             if stock <= restante:
