@@ -105,5 +105,7 @@ else:
         registrar_producto()
     elif opcion == "Gestionar Productos" and tipo in ["Administrador"]:
         mostrar_productos()
+    elif opcion == "Inventario" and tipo in ["Administrador"]:
+        mostrar_inventario()
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
