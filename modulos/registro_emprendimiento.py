@@ -6,7 +6,7 @@ def registrar_emprendimiento():
         st.warning("⚠️ Debes iniciar sesión.")
         st.stop()
 
-    st.header("Registrar nuevo emprendimiento")
+    st.header("📓 Registrar nuevo emprendimiento")
 
     # Formulario
     id_emprendimiento = st.text_input("ID del Emprendimiento")
