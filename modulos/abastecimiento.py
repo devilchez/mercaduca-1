@@ -155,10 +155,9 @@ def mostrar_abastecimiento():
                                                   Cantidad_ingresada,
                                                   Cantidad_salida,
                                                   Stock,
-                                                  Descripcion,
                                                   Fecha_salida,
                                                   Fecha_vencimiento)
-                                              VALUES (%s, %s, NOW(), %s, 0, %s, NULL, NULL, %s)""",
+                                              VALUES (%s, %s, NOW(), %s, 0, %s, NULL, %s)""",
                                            (id_abastecimiento, prod["id_producto"], prod["cantidad"], prod["cantidad"], prod["fecha_vencimiento"]))
 
                     con.commit()
