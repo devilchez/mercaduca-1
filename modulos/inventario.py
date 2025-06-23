@@ -6,13 +6,13 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_inventario():
     st.header("📟 Inventario")
 
-    # Filtros de fecha
+    # Filtros de fecha para productos abastecidos
     col1, col2 = st.columns(2)
     with col1:
         fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1))
     with col2:
         fecha_fin = st.date_input("Hasta", value=datetime.today())
-        
+
     if fecha_inicio > fecha_fin:
         st.warning("⚠️ La fecha de inicio no puede ser mayor que la fecha de fin.")
         return
@@ -21,7 +21,7 @@ def mostrar_inventario():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Mostrar productos abastecidos filtrados por fecha
+        # 📥 Productos abastecidos
         cursor.execute("""
             SELECT e.Nombre_emprendimiento, p.Nombre_producto, i.Cantidad_ingresada, i.Fecha_ingreso
             FROM INVENTARIO i
@@ -39,7 +39,7 @@ def mostrar_inventario():
         else:
             st.info("No se encontraron productos abastecidos en el rango seleccionado.")
 
-        # Mostrar stock actual (sin filtrar por fecha, porque es el stock total restante)
+        # 📦 Stock actual
         cursor.execute("""
             SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(i.Stock) AS Stock_Disponible
             FROM INVENTARIO i
@@ -57,22 +57,24 @@ def mostrar_inventario():
         else:
             st.info("No hay stock disponible registrado.")
 
-        # Mostrar productos próximos a vencer
-        # Definir el rango de fecha de vencimiento: productos que vencen en los próximos 30 días
+        # 📅 Productos próximos a vencer
         fecha_limite = datetime.today() + timedelta(days=30)
 
         cursor.execute("""
-            SELECT e.Nombre_emprendimiento, p.Nombre_producto, i.Cantidad_ingresada, i.Fecha_vencimiento
+            SELECT e.Nombre_emprendimiento, p.Nombre_producto, 
+                   (i.Cantidad_ingresada - i.Cantidad_salida) AS Stock_Disponible,
+                   i.Fecha_vencimiento
             FROM INVENTARIO i
             JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE i.Fecha_vencimiento BETWEEN NOW() AND %s
+              AND (i.Cantidad_ingresada - i.Cantidad_salida) > 0
             ORDER BY i.Fecha_vencimiento ASC
         """, (fecha_limite,))
         productos_proximos_vencer = cursor.fetchall()
 
         if productos_proximos_vencer:
-            df_proximos_vencer = pd.DataFrame(productos_proximos_vencer, columns=["Emprendimiento", "Producto", "Cantidad", "Fecha de Vencimiento"])
+            df_proximos_vencer = pd.DataFrame(productos_proximos_vencer, columns=["Emprendimiento", "Producto", "Stock Disponible", "Fecha de Vencimiento"])
             st.subheader("📅 Productos Próximos a Vencer (Próximos 30 días)")
             st.dataframe(df_proximos_vencer)
         else:
