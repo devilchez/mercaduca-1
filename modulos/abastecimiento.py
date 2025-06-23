@@ -21,14 +21,15 @@ def mostrar_abastecimiento():
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-        cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
+        cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento, Tipo_producto FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
-        for idp, nombre, precio, id_emp in productos:
+        for idp, nombre, precio, id_emp, tipo_producto in productos:
             productos_por_emprendimiento.setdefault(id_emp, []).append({
                 "id": idp,
                 "nombre": nombre,
-                "precio": precio
+                "precio": precio,
+                "tipo_producto": tipo_producto  # Guardamos el tipo de producto
             })
 
         productos_abastecer = []
@@ -80,16 +81,24 @@ def mostrar_abastecimiento():
                         format="%d",
                         key=f"abast_cantidad_{sec_id}_{i}"
                     )
-                with col3:
-                    fecha_vencimiento = st.date_input(
-                        f"Vence el #{i + 1}",
-                        value=prod.get("fecha_vencimiento", datetime.today().date()),
-                        key=f"abast_fecha_venc_{sec_id}_{i}"
-                    )
+
+                # Aquí comprobamos si el producto es perecedero y mostramos la fecha
+                if prod_sel != "-- Selecciona --":
+                    # Obtener si el producto es perecedero
+                    producto_info = next((p for p in productos_disponibles if p["nombre"] == prod_sel), None)
+                    if producto_info and producto_info["tipo_producto"] == "Perecedero":  # Verificamos si es perecedero
+                        with col3:
+                            fecha_vencimiento = st.date_input(
+                                f"Vence el #{i + 1}",
+                                value=prod.get("fecha_vencimiento", datetime.today().date()),
+                                key=f"abast_fecha_venc_{sec_id}_{i}"
+                            )
+                        seccion["productos"][i]["fecha_vencimiento"] = fecha_vencimiento
+                    else:
+                        seccion["productos"][i]["fecha_vencimiento"] = None  # No es perecedero, no se necesita fecha
 
                 seccion["productos"][i]["producto"] = prod_sel if prod_sel != "-- Selecciona --" else None
                 seccion["productos"][i]["cantidad"] = cantidad
-                seccion["productos"][i]["fecha_vencimiento"] = fecha_vencimiento
 
             if len(seccion["productos"]) < 200:
                 if st.button(f"➕ Agregar otro producto a emprendimiento #{sec_id + 1}", key=f"add_prod_abast_{sec_id}"):
@@ -130,34 +139,25 @@ def mostrar_abastecimiento():
                         agrupados.setdefault(p["id_emprendimiento"], []).append(p)
 
                     for id_emp, productos in agrupados.items():
-                        cursor.execute("INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, Fecha_ingreso) VALUES (%s, NOW())", (id_emp,))
+                        cursor.execute("INSERT INTO ABASTECIMIENTO (ID_Emprendimiento, Fecha_ingreso) VALUES (%s, NOW())", (id_emp, ))
                         id_abastecimiento = cursor.lastrowid
 
                         for prod in productos:
-                            cursor.execute("""
-                                INSERT INTO PRODUCTOXABASTECIMIENTO (ID_Producto, id_abastecimiento, cantidad, precio_unitario)
-                                VALUES (%s, %s, %s, %s)
-                            """, (prod["id_producto"], id_abastecimiento, prod["cantidad"], prod["precio"]))
+                            cursor.execute("""INSERT INTO PRODUCTOXABASTECIMIENTO (ID_Producto, id_abastecimiento, cantidad, precio_unitario)
+                                              VALUES (%s, %s, %s, %s)""", (prod["id_producto"], id_abastecimiento, prod["cantidad"], prod["precio"]))
 
-                            cursor.execute("""
-                                INSERT INTO INVENTARIO (
-                                    ID_Abastecimiento,
-                                    ID_Producto,
-                                    Fecha_ingreso,
-                                    Cantidad_ingresada,
-                                    Cantidad_salida,
-                                    Stock,
-                                    Descripcion,
-                                    Fecha_salida,
-                                    Fecha_vencimiento
-                                ) VALUES (%s, %s, NOW(), %s, 0, %s, NULL, NULL, %s)
-                            """, (
-                                id_abastecimiento,
-                                prod["id_producto"],
-                                prod["cantidad"],
-                                prod["cantidad"],
-                                prod["fecha_vencimiento"]
-                            ))
+                            cursor.execute("""INSERT INTO INVENTARIO (
+                                                  ID_Abastecimiento,
+                                                  ID_Producto,
+                                                  Fecha_ingreso,
+                                                  Cantidad_ingresada,
+                                                  Cantidad_salida,
+                                                  Stock,
+                                                  Descripcion,
+                                                  Fecha_salida,
+                                                  Fecha_vencimiento)
+                                              VALUES (%s, %s, NOW(), %s, 0, %s, NULL, NULL, %s)""",
+                                           (id_abastecimiento, prod["id_producto"], prod["cantidad"], prod["cantidad"], prod["fecha_vencimiento"]))
 
                     con.commit()
                     st.success("✅ Abastecimiento registrado correctamente.")
@@ -183,3 +183,4 @@ def mostrar_abastecimiento():
                 con.close()
         except:
             pass
+
