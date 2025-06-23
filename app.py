@@ -11,6 +11,7 @@ from modulos.registro_emprendimiento import registrar_emprendimiento
 from modulos.registro_producto import registrar_producto
 from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
+from modulos.inventario import mostrar_inventario
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
@@ -80,6 +81,7 @@ else:
             "Gestionar Emprendimiento",
             "Registrar Productos",
             "Gestionar Productos",
+            "Inventario",
         ]
     )
 
