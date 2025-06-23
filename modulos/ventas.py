@@ -3,7 +3,7 @@ from datetime import datetime
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_ventas():
-    st.header("📟 Registrar venta")
+    st.header("🏷️ Registrar venta")
 
     # Estado inicial
     if "secciones" not in st.session_state:
