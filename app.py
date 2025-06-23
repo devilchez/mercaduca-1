@@ -1,4 +1,4 @@
-import sys
+oimport sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modulos'))
 
@@ -74,9 +74,9 @@ else:
         [
             "Ventas",
             "Abastecimiento",
-            "Registrar Emprendedor",
-            "Gestionar Emprendedores",
-            "Registrar Producto",
+            "Registrar Emprendimiento",
+            "Gestionar Emprendimiento",
+            "Registrar Productos",
             "Gestionar Productos",
         ]
     )
