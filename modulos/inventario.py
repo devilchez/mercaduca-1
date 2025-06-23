@@ -62,7 +62,7 @@ def mostrar_inventario():
 
         cursor.execute("""
             SELECT e.Nombre_emprendimiento, p.Nombre_producto, 
-                   i.Stock AS Stock_Disponible AS Stock_Disponible,
+                   i.Stock AS Stock_Disponible,
                    i.Fecha_vencimiento
             FROM INVENTARIO i
             JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
