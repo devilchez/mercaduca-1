@@ -28,25 +28,33 @@ def registrar_producto():
         st.warning("⚠️ No hay emprendimientos registrados.")
         return
 
-    # Diccionario {nombre: id}
+    # Crear diccionario {nombre: id}
     opciones = {nombre: id_ for id_, nombre in emprendimientos}
+    lista_nombres = ["— Selecciona —"] + list(opciones.keys())
+
+    # Determinar índice seguro
+    if st.session_state.emprendimiento_seleccionado in opciones:
+        indice = lista_nombres.index(st.session_state.emprendimiento_seleccionado)
+    else:
+        indice = 0
+
+    # Selectbox
     seleccion = st.selectbox(
         "Selecciona un emprendimiento",
-        ["— Selecciona —"] + list(opciones.keys()),
-        index=["— Selecciona —"] + list(opciones.keys()).index(st.session_state.emprendimiento_seleccionado)
-        if st.session_state.emprendimiento_seleccionado in opciones else 0,
+        lista_nombres,
+        index=indice,
         key="emprendimiento_seleccionado"
     )
 
-    if seleccion != "— Selecciona —":
-        id_emprendimiento = opciones[seleccion]
-        st.text_input("ID del Emprendimiento", value=id_emprendimiento, disabled=True)
-    else:
-        id_emprendimiento = None
+    # Si no se ha seleccionado un emprendimiento, detener
+    if seleccion == "— Selecciona —":
         st.info("🔹 Selecciona un emprendimiento para continuar.")
         st.stop()
 
-    # Formulario producto
+    id_emprendimiento = opciones[seleccion]
+    st.text_input("ID del Emprendimiento", value=id_emprendimiento, disabled=True)
+
+    # Formulario del producto
     id_producto = st.text_input("ID del Producto")
     nombre_producto = st.text_input("Nombre del producto")
     descripcion = st.text_area("Descripción")
@@ -73,7 +81,7 @@ def registrar_producto():
                 con.commit()
                 st.success("✅ Producto registrado correctamente.")
 
-                # Reiniciar emprendimiento seleccionado y refrescar módulo
+                # Reiniciar selección y recargar módulo
                 st.session_state.emprendimiento_seleccionado = "— Selecciona —"
                 st.rerun()
 
@@ -82,4 +90,3 @@ def registrar_producto():
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
-
