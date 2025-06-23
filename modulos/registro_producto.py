@@ -63,30 +63,38 @@ def registrar_producto():
             st.warning("⚠️ Por favor, completa todos los campos.")
         else:
             try:
+                # Verificar la conexión y ejecutar la inserción
                 con = obtener_conexion()
                 cursor = con.cursor()
-                cursor.execute("""
-                    INSERT INTO PRODUCTO (
-                        ID_Producto, Nombre_producto, Descripcion, Precio,
-                        Tipo_producto, ID_Emprendimiento
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (
-                    id_producto, nombre_producto, descripcion, precio,
-                    tipo_producto, id_emprendimiento
-                ))
-                con.commit()
-                st.success("✅ Producto registrado correctamente.")
 
-                # Reiniciar la selección y limpiar el estado antes de que se recargue el selectbox
-                st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+                # Comprobamos si el producto ya existe para evitar duplicados
+                cursor.execute("SELECT COUNT(*) FROM PRODUCTO WHERE ID_Producto = %s", (id_producto,))
+                existe = cursor.fetchone()[0]
+                if existe:
+                    st.warning("⚠️ El producto con ese ID ya existe.")
+                else:
+                    cursor.execute("""
+                        INSERT INTO PRODUCTO (
+                            ID_Producto, Nombre_producto, Descripcion, Precio,
+                            Tipo_producto, ID_Emprendimiento
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (
+                        id_producto, nombre_producto, descripcion, precio,
+                        tipo_producto, id_emprendimiento
+                    ))
 
-                # Reiniciar la página para volver al inicio del formulario
-                st.experimental_rerun()
+                    con.commit()
+                    st.success("✅ Producto registrado correctamente.")
+
+                    # Reiniciar la selección y limpiar el estado antes de que se recargue el selectbox
+                    st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+
+                    # Reiniciar la página para volver al inicio del formulario
+                    st.experimental_rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar el producto: {e}")
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
-
