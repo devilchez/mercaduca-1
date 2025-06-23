@@ -64,6 +64,7 @@ def registrar_producto():
 
                 con.commit()
                 st.success("✅ Producto registrado correctamente.")
+                st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
