@@ -6,67 +6,48 @@ def mostrar_inventario():
     st.header("📦 Módulo de Inventario")
 
     try:
-        # Conexión a la base de datos
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Consulta para obtener los productos abastecidos por emprendimiento
-        query_abastecimiento = """
-            SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(a.cantidad) AS cantidad_abastecida
-            FROM ABASTECIMIENTO a
-            JOIN PRODUCTO p ON a.ID_Producto = p.ID_Producto
+        # Mostrar productos abastecidos por emprendimiento (Cantidad ingresada)
+        cursor.execute("""
+            SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(i.Cantidad_ingresada) AS Cantidad_Abastecida
+            FROM INVENTARIO i
+            JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
             GROUP BY e.Nombre_emprendimiento, p.Nombre_producto
             ORDER BY e.Nombre_emprendimiento, p.Nombre_producto
-        """
-        cursor.execute(query_abastecimiento)
-        rows_abastecimiento = cursor.fetchall()
+        """)
+        datos_abastecidos = cursor.fetchall()
 
-        # Si no hay productos abastecidos
-        if not rows_abastecimiento:
-            st.info("No se encontraron productos abastecidos.")
-            return
+        if datos_abastecidos:
+            df_abastecidos = pd.DataFrame(datos_abastecidos, columns=["Emprendimiento", "Producto", "Cantidad Abastecida"])
+            st.subheader("📥 Productos Abastecidos")
+            st.dataframe(df_abastecidos)
+        else:
+            st.info("No se han registrado productos abastecidos aún.")
 
-        # Crear DataFrame para los productos abastecidos
-        df_abastecimiento = pd.DataFrame(rows_abastecimiento, columns=["Emprendimiento", "Producto", "Cantidad Abastecida"])
-        st.subheader("Productos Abastecidos")
-        st.dataframe(df_abastecimiento)
-
-        # Consulta para obtener el stock disponible (ventas ya registradas)
-        query_ventas = """
-            SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(pv.cantidad) AS cantidad_vendida
-            FROM PRODUCTOXVENTA pv
-            JOIN PRODUCTO p ON pv.ID_Producto = p.ID_Producto
-            JOIN VENTA v ON pv.ID_Venta = v.ID_Venta
+        # Mostrar stock actual
+        cursor.execute("""
+            SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(i.Stock) AS Stock_Disponible
+            FROM INVENTARIO i
+            JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
             GROUP BY e.Nombre_emprendimiento, p.Nombre_producto
             ORDER BY e.Nombre_emprendimiento, p.Nombre_producto
-        """
-        cursor.execute(query_ventas)
-        rows_ventas = cursor.fetchall()
+        """)
+        datos_stock = cursor.fetchall()
 
-        # Si no hay ventas registradas
-        if not rows_ventas:
-            st.info("No se han registrado ventas.")
-            return
-
-        # Crear DataFrame para las ventas
-        df_ventas = pd.DataFrame(rows_ventas, columns=["Emprendimiento", "Producto", "Cantidad Vendida"])
-
-        # Unir ambas tablas para mostrar el stock
-        df_inventario = pd.merge(df_abastecimiento, df_ventas, on=["Emprendimiento", "Producto"], how="left")
-        df_inventario["Cantidad Vendida"].fillna(0, inplace=True)
-        df_inventario["Stock Restante"] = df_inventario["Cantidad Abastecida"] - df_inventario["Cantidad Vendida"]
-
-        st.subheader("Stock Restante después de Ventas")
-        st.dataframe(df_inventario)
+        if datos_stock:
+            df_stock = pd.DataFrame(datos_stock, columns=["Emprendimiento", "Producto", "Stock Disponible"])
+            st.subheader("📦 Stock Actual")
+            st.dataframe(df_stock)
+        else:
+            st.info("No hay stock disponible registrado.")
 
     except Exception as e:
         st.error(f"❌ Error al cargar el inventario: {e}")
-    
+
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
-
-# Llamar a la función que muestra el inventario
-mostrar_inventario()
