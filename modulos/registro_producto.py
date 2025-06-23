@@ -12,7 +12,7 @@ def registrar_producto():
     try:
         con = obtener_conexion()
         cursor = con.cursor()
-        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
+        cursor.execute("SELECT ID_Emprendimiento, Nombre FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         cursor.close()
         con.close()
@@ -28,7 +28,7 @@ def registrar_producto():
     opciones = {nombre: id_ for id_, nombre in emprendimientos}
     lista_nombres = ["— Selecciona —"] + list(opciones.keys())
 
-    # Verificar si la selección está disponible, si no se restablece
+    # Modificar st.session_state.emprendimiento_seleccionado antes de crear el selectbox
     if st.session_state.emprendimiento_seleccionado not in lista_nombres:
         st.session_state.emprendimiento_seleccionado = "— Selecciona —"
 
@@ -78,16 +78,15 @@ def registrar_producto():
                 con.commit()
                 st.success("✅ Producto registrado correctamente.")
 
-                # Reiniciar sesión (similar a la lógica de ventas)
+                # Reiniciar la selección y limpiar el estado antes de que se recargue el selectbox
                 st.session_state.emprendimiento_seleccionado = "— Selecciona —"
 
-                # Usar st.rerun() para reiniciar la página
-                st.rerun()
+                # Reiniciar la página para volver al inicio del formulario
+                st.experimental_rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar el producto: {e}")
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
-
 
