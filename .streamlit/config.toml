@@ -1,5 +1,5 @@
 [theme]
-base="dark"  # Tema oscuro
+base="light"  # Tema oscuro
 primaryColor="#28a745"  # Verde brillante para selección, botones, etc.
 backgroundColor="#121212"  # Fondo oscuro general
 secondaryBackgroundColor="#1a1a1a"  # Barra lateral u otros contenedores
