@@ -61,7 +61,6 @@ def reporte_ventas():
                     f"**Emprendimiento:** {row['Emprendimiento']}  \n"
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
-                    f"**Precio Unitario:** ${row['Precio Unitario']:.2f}  \n"
                     f"**Total:** ${row['Total']:.2f}  "
                 )
             with col2:
