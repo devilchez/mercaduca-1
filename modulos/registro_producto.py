@@ -7,7 +7,7 @@ def registrar_producto():
         st.warning("⚠️ Debes iniciar sesión.")
         st.stop()
 
-    st.header("Registrar nuevo producto")
+    st.header("📓 Registrar nuevo producto")
 
     # Formulario
     id_producto = st.text_input("ID del Producto")
