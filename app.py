@@ -5,12 +5,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'modulos'))
 import streamlit as st
 from modulos.login import login
 from modulos.ventas import mostrar_ventas
+from modulos.reporte_ventas import reporte_ventas
 from modulos.abastecimiento import mostrar_abastecimiento
 from modulos.registro_emprendimiento import registrar_emprendimiento
 from modulos.registro_producto import registrar_producto
 from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
-from modulos.reporte_ventas import reporte_ventas
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
@@ -91,6 +91,8 @@ else:
 
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
+    elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
+        reporte_ventas()
     elif opcion == "Abastecimiento" and tipo in ["Administrador"]:
         mostrar_abastecimiento()
     elif opcion == "Registrar Emprendedor" and tipo in ["Administrador"]:
@@ -101,8 +103,5 @@ else:
         registrar_producto()
     elif opcion == "Gestionar Productos" and tipo in ["Administrador"]:
         mostrar_productos()
-    elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
-        reporte_ventas()
-
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
