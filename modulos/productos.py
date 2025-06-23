@@ -36,7 +36,6 @@ def actualizar_productos(df):
             float(row["Precio"]),
             str(row["Tipo_producto"]),
             str(row["ID_Emprendimiento"]),
-            row["Fecha_entrada"].date() if pd.notnull(row["Fecha_entrada"]) else None,
             row["Fecha_vencimiento"].date() if pd.notnull(row["Fecha_vencimiento"]) else None,
             str(row["ID_Producto"])
         ))
