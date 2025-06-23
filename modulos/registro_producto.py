@@ -16,7 +16,7 @@ def registrar_producto():
     try:
         con = obtener_conexion()
         cursor = con.cursor()
-        cursor.execute("SELECT ID_Emprendimiento, Nombre FROM EMPRENDIMIENTO")
+        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         cursor.close()
         con.close()
@@ -84,7 +84,7 @@ def registrar_producto():
 
                 # Reiniciar selección y recargar módulo
                 st.session_state.emprendimiento_seleccionado = "— Selecciona —"
-                st.experimental_rerun()
+                st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
