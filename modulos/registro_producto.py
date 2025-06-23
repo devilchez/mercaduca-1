@@ -28,18 +28,15 @@ def registrar_producto():
     opciones = {nombre: id_ for id_, nombre in emprendimientos}
     lista_nombres = ["— Selecciona —"] + list(opciones.keys())
 
-    # Modificar st.session_state.emprendimiento_seleccionado antes de crear el selectbox
+    # Restablecer st.session_state.emprendimiento_seleccionado antes de renderizar el selectbox
     if st.session_state.emprendimiento_seleccionado not in lista_nombres:
         st.session_state.emprendimiento_seleccionado = "— Selecciona —"
-
-    # Determinar el índice de la opción seleccionada
-    indice = lista_nombres.index(st.session_state.emprendimiento_seleccionado)
 
     # Renderizar el selectbox
     seleccion = st.selectbox(
         "Selecciona un emprendimiento",
         lista_nombres,
-        index=indice,
+        index=lista_nombres.index(st.session_state.emprendimiento_seleccionado),
         key="emprendimiento_seleccionado"
     )
 
@@ -87,10 +84,10 @@ def registrar_producto():
                     con.commit()
                     st.success("✅ Producto registrado correctamente.")
 
-                    # Reiniciar la selección y limpiar el estado antes de que se recargue el selectbox
+                    # Restablecer la selección antes de la recarga
                     st.session_state.emprendimiento_seleccionado = "— Selecciona —"
 
-                    # Reiniciar la página para volver al inicio del formulario
+                    # Recargar la página para reiniciar el formulario
                     st.experimental_rerun()
 
             except Exception as e:
