@@ -24,7 +24,7 @@ def reporte_ventas():
         cursor = con.cursor()
 
         query = """
-            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta
+            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, pr.ID_Producto
             FROM VENTA v
             JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
@@ -41,38 +41,56 @@ def reporte_ventas():
             return
 
         df = pd.DataFrame(rows, columns=[
-            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta"
+            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta", "ID_Producto"
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Mostrar ventas agrupadas
-        ventas_ids = df['ID_Venta'].unique()
-
-        for venta_id in ventas_ids:
-            st.markdown("---")
-            st.subheader(f"🧾 Venta ID: {venta_id}")
-            venta_df = df[df['ID_Venta'] == venta_id][["Producto", "Cantidad", "Precio Unitario", "Total"]]
-            st.table(venta_df)
-
-            if st.button(f"🗑 Eliminar venta ID {venta_id}", key=f"delete_{venta_id}"):
-                try:
-                    cursor.execute("DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
-                    cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
-                    con.commit()
-                    st.success(f"✅ Venta ID {venta_id} eliminada correctamente.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Error al eliminar la venta: {e}")
-
-        # Mostrar tabla completa si se desea exportar
+        # Mostrar tabla con opción de eliminar producto por producto
         st.markdown("---")
-        st.markdown("### 📁 Exportar todas las ventas filtradas")
+        st.markdown("### 🗂 Detalles de Ventas")
+
+        for index, row in df.iterrows():
+            col1, col2 = st.columns([6, 1])
+            with col1:
+                st.markdown(
+                    f"**Venta ID:** {row['ID_Venta']}  
+                    **Emprendimiento:** {row['Emprendimiento']}  
+                    **Producto:** {row['Producto']}  
+                    **Cantidad:** {row['Cantidad']}  
+                    **Precio Unitario:** ${row['Precio Unitario']:.2f}  
+                    **Total:** ${row['Total']:.2f}  ")
+            with col2:
+                if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
+                    try:
+                        cursor.execute(
+                            "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
+                            (row['ID_Venta'], row['ID_Producto'])
+                        )
+
+                        # Si ya no hay productos en esa venta, eliminar la venta
+                        cursor.execute(
+                            "SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s",
+                            (row['ID_Venta'],)
+                        )
+                        count = cursor.fetchone()[0]
+                        if count == 0:
+                            cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (row['ID_Venta'],))
+
+                        con.commit()
+                        st.success(f"✅ Producto eliminado de la venta ID {row['ID_Venta']}")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error al eliminar: {e}")
+
+        # Exportar Excel y PDF
+        st.markdown("---")
+        st.markdown("### 📁 Exportar ventas filtradas")
         col1, col2 = st.columns(2)
 
         with col1:
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name='ReporteVentas')
+                df.drop(columns=["ID_Producto"]).to_excel(writer, index=False, sheet_name='ReporteVentas')
             st.download_button(
                 label="⬇️ Descargar Excel",
                 data=excel_buffer.getvalue(),
