@@ -24,13 +24,13 @@ def reporte_ventas():
         cursor = con.cursor()
 
         query = """
-            SELECT e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta
+            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta
             FROM VENTA v
             JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN %s AND %s
-            ORDER BY e.Nombre_emprendimiento, pr.Nombre_producto
+            ORDER BY v.ID_Venta DESC
         """
 
         cursor.execute(query, (fecha_inicio, fecha_fin))
@@ -40,20 +40,39 @@ def reporte_ventas():
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
-        # Crear DataFrame
-        df = pd.DataFrame(rows, columns=["Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta"])
+        df = pd.DataFrame(rows, columns=[
+            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta"
+        ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        st.dataframe(df)
+        # Mostrar ventas agrupadas
+        ventas_ids = df['ID_Venta'].unique()
 
-        # Botones de descarga
+        for venta_id in ventas_ids:
+            st.markdown("---")
+            st.subheader(f"🧾 Venta ID: {venta_id}")
+            venta_df = df[df['ID_Venta'] == venta_id][["Producto", "Cantidad", "Precio Unitario", "Total"]]
+            st.table(venta_df)
+
+            if st.button(f"🗑 Eliminar venta ID {venta_id}", key=f"delete_{venta_id}"):
+                try:
+                    cursor.execute("DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
+                    cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
+                    con.commit()
+                    st.success(f"✅ Venta ID {venta_id} eliminada correctamente.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error al eliminar la venta: {e}")
+
+        # Mostrar tabla completa si se desea exportar
+        st.markdown("---")
+        st.markdown("### 📁 Exportar todas las ventas filtradas")
         col1, col2 = st.columns(2)
 
         with col1:
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
                 df.to_excel(writer, index=False, sheet_name='ReporteVentas')
-
             st.download_button(
                 label="⬇️ Descargar Excel",
                 data=excel_buffer.getvalue(),
@@ -83,7 +102,7 @@ def reporte_ventas():
 
     except Exception as e:
         st.error(f"❌ Error al generar el reporte: {e}")
+
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
-
