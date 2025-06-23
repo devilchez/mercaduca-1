@@ -98,4 +98,3 @@ def mostrar_emprendimientos():
             else:
                 st.info("Selecciona al menos un emprendimiento para eliminar.")
 
-
