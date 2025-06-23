@@ -53,12 +53,13 @@ def reporte_ventas():
             col1, col2 = st.columns([6, 1])
             with col1:
                 st.markdown(
-                    f"**Venta ID:** {row['ID_Venta']}  
-                    **Emprendimiento:** {row['Emprendimiento']}  
-                    **Producto:** {row['Producto']}  
-                    **Cantidad:** {row['Cantidad']}  
-                    **Precio Unitario:** ${row['Precio Unitario']:.2f}  
-                    **Total:** ${row['Total']:.2f}  ")
+                    f"**Venta ID:** {row['ID_Venta']}"  
+                    **Emprendimiento:** {row['Emprendimiento']}"  
+                    **Producto:** {row['Producto']}"  
+                    **Cantidad:** {row['Cantidad']}"  
+                    **Precio Unitario:** ${row['Precio Unitario']:.2f}"  
+                    **Total:** ${row['Total']:.2f}  "
+                    )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
                     try:
