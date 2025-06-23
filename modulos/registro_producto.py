@@ -13,7 +13,7 @@ def registrar_producto():
     try:
         con = obtener_conexion()
         cursor = con.cursor()
-        cursor.execute("SELECT ID_Emprendimiento, Nombre FROM EMPRENDIMIENTO")
+        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
     except Exception as e:
         st.error(f"❌ Error al obtener emprendimientos: {e}")
