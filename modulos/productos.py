@@ -71,7 +71,7 @@ def eliminar_productos(ids_a_eliminar):
 
 def mostrar_productos():
     """Muestra la tabla de PRODUCTO para edición y eliminación."""
-    st.header("Productos registrados")
+    st.header("📋 Productos registrados")
 
     df = obtener_productos()
     if df.empty:
