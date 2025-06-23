@@ -6,6 +6,11 @@ def obtener_productos():
     """Obtiene todos los registros de PRODUCTO desde la base de datos."""
     con = obtener_conexion()
     df = pd.read_sql("SELECT * FROM PRODUCTO", con)
+
+    # Convertimos las fechas a tipo datetime (para evitar errores en el editor)
+    df["Fecha_entrada"] = pd.to_datetime(df["Fecha_entrada"], errors="coerce")
+    df["Fecha_vencimiento"] = pd.to_datetime(df["Fecha_vencimiento"], errors="coerce")
+
     con.close()
     return df
 
@@ -22,7 +27,9 @@ def actualizar_productos(df):
                 Descripcion=%s,
                 Precio=%s,
                 Tipo_producto=%s,
-                ID_Emprendimiento=%s
+                ID_Emprendimiento=%s,
+                Fecha_entrada=%s,
+                Fecha_vencimiento=%s
             WHERE ID_Producto=%s
         """, (
             str(row["Nombre_producto"]),
@@ -30,6 +37,8 @@ def actualizar_productos(df):
             float(row["Precio"]),
             str(row["Tipo_producto"]),
             str(row["ID_Emprendimiento"]),
+            row["Fecha_entrada"].date() if pd.notnull(row["Fecha_entrada"]) else None,
+            row["Fecha_vencimiento"].date() if pd.notnull(row["Fecha_vencimiento"]) else None,
             str(row["ID_Producto"])
         ))
 
@@ -69,7 +78,7 @@ def mostrar_productos():
         st.info("No hay productos registrados.")
         return
 
-    # Filtro por nombre de producto con barra buscadora
+    # Filtro por nombre de producto
     nombres_unicos = df["Nombre_producto"].dropna().unique()
     if len(nombres_unicos) > 0:
         nombre_seleccionado = st.selectbox(
@@ -83,7 +92,13 @@ def mostrar_productos():
 
     # Agregar columna de eliminación
     df["Eliminar"] = False
-    edited_df = st.data_editor(df, num_rows="fixed", use_container_width=True, key="editor_productos")
+
+    edited_df = st.data_editor(
+        df,
+        num_rows="fixed",
+        use_container_width=True,
+        key="editor_productos"
+    )
 
     col1, col2 = st.columns(2)
 
