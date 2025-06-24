@@ -28,14 +28,14 @@ def registrar_producto():
     opciones = {nombre: id_ for id_, nombre in emprendimientos}
     lista_nombres = ["— Selecciona —"] + list(opciones.keys())
 
-    # Modificar st.session_state.emprendimiento_seleccionado antes de crear el selectbox
+    # Validar valor actual en el estado
     if st.session_state.emprendimiento_seleccionado not in lista_nombres:
         st.session_state.emprendimiento_seleccionado = "— Selecciona —"
 
     # Determinar el índice de la opción seleccionada
     indice = lista_nombres.index(st.session_state.emprendimiento_seleccionado)
 
-    # Renderizar el selectbox
+    # Selectbox con clave de estado
     seleccion = st.selectbox(
         "Selecciona un emprendimiento",
         lista_nombres,
@@ -51,22 +51,29 @@ def registrar_producto():
     id_emprendimiento = opciones[seleccion]
     st.text_input("ID del Emprendimiento", value=id_emprendimiento, disabled=True)
 
-    # Formulario del producto
-    id_producto = st.text_input("ID del Producto")
-    nombre_producto = st.text_input("Nombre del producto")
-    descripcion = st.text_area("Descripción")
-    precio = st.number_input("Precio", min_value=0.0, step=0.01)
-    tipo_producto = st.selectbox("Tipo de producto", ["Perecedero", "No perecedero"])
+    # Formulario con claves para poder limpiar luego
+    id_producto = st.text_input("ID del Producto", key="id_producto")
+    nombre_producto = st.text_input("Nombre del producto", key="nombre_producto")
+    descripcion = st.text_area("Descripción", key="descripcion")
+    precio = st.number_input("Precio", min_value=0.0, step=0.01, key="precio")
+    tipo_producto = st.selectbox("Tipo de producto", ["Perecedero", "No perecedero"], key="tipo_producto")
 
     if st.button("Registrar"):
-        if not all([id_producto, nombre_producto, descripcion, precio, tipo_producto, id_emprendimiento]):
+        if not all([
+            st.session_state.id_producto,
+            st.session_state.nombre_producto,
+            st.session_state.descripcion,
+            st.session_state.precio,
+            st.session_state.tipo_producto,
+            id_emprendimiento
+        ]):
             st.warning("⚠️ Por favor, completa todos los campos.")
         else:
             try:
                 con = obtener_conexion()
                 cursor = con.cursor()
 
-                # Insertar el producto en la tabla
+                # Insertar el producto
                 cursor.execute("""
                     INSERT INTO PRODUCTO (
                         ID_Producto, Nombre_producto, Descripcion, Precio,
@@ -74,14 +81,25 @@ def registrar_producto():
                     )
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, (
-                    id_producto, nombre_producto, descripcion, precio,
-                    tipo_producto, id_emprendimiento
+                    st.session_state.id_producto,
+                    st.session_state.nombre_producto,
+                    st.session_state.descripcion,
+                    st.session_state.precio,
+                    st.session_state.tipo_producto,
+                    id_emprendimiento
                 ))
 
                 con.commit()
-                st.success(f"✅ Producto registrado correctamente con ID: {id_producto}")
-                st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
-                st.session_state.contador_secciones = 1
+                st.success(f"✅ Producto registrado correctamente con ID: {st.session_state.id_producto}")
+
+                # Limpiar los campos del formulario
+                st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+                st.session_state.pop("id_producto", None)
+                st.session_state.pop("nombre_producto", None)
+                st.session_state.pop("descripcion", None)
+                st.session_state.pop("precio", None)
+                st.session_state.pop("tipo_producto", None)
+
                 st.rerun()
 
             except Exception as e:
@@ -91,3 +109,4 @@ def registrar_producto():
                     cursor.close()
                 if 'con' in locals():
                     con.close()
+
