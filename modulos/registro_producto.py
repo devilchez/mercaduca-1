@@ -124,7 +124,7 @@ def registrar_producto():
                 "tipo_producto": "Perecedero"
             })
             st.session_state.contador_secciones_producto += 1
-            st.experimental_rerun()
+            st.rerun()
 
     except Exception as e:
         st.error(f"❌ Error al cargar los datos de emprendimientos: {e}")
