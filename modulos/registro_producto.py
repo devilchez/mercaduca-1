@@ -9,7 +9,7 @@ def registrar_producto():
         st.session_state.secciones_producto = [{
             "id": 0,
             "emprendimiento": None,
-            "producto": None,
+            "id_producto": "",
             "nombre_producto": "",
             "descripcion": "",
             "precio": 0.0,
@@ -52,7 +52,7 @@ def registrar_producto():
             # Si el emprendimiento cambia, reiniciar la sección
             if nuevo_id_emp != seccion["emprendimiento"]:
                 seccion["emprendimiento"] = nuevo_id_emp
-                seccion["producto"] = None
+                seccion["id_producto"] = ""
                 seccion["nombre_producto"] = ""
                 seccion["descripcion"] = ""
                 seccion["precio"] = 0.0
@@ -63,7 +63,7 @@ def registrar_producto():
             st.text_input("ID del Emprendimiento", value=id_emprendimiento, disabled=True)
 
             # Formulario del producto
-            seccion["producto"] = st.text_input("ID del Producto", value=seccion["producto"], key=f"producto_{sec_id}")
+            seccion["id_producto"] = st.text_input("ID del Producto", value=seccion["id_producto"], key=f"id_producto_{sec_id}")
             seccion["nombre_producto"] = st.text_input("Nombre del Producto", value=seccion["nombre_producto"], key=f"nombre_producto_{sec_id}")
             seccion["descripcion"] = st.text_area("Descripción", value=seccion["descripcion"], key=f"descripcion_{sec_id}")
             seccion["precio"] = st.number_input("Precio", min_value=0.0, value=seccion["precio"], step=0.01, key=f"precio_{sec_id}")
@@ -71,12 +71,12 @@ def registrar_producto():
 
             # Registrar el producto
             if st.button(f"Registrar producto #{sec_id + 1}", key=f"registrar_{sec_id}"):
-                if not all([seccion["producto"], seccion["nombre_producto"], seccion["descripcion"], seccion["precio"] > 0]):
+                if not all([seccion["id_producto"], seccion["nombre_producto"], seccion["descripcion"], seccion["precio"] > 0]):
                     st.warning("⚠️ Por favor, completa todos los campos.")
                 else:
                     try:
                         # Comprobamos si el producto ya existe
-                        cursor.execute("SELECT COUNT(*) FROM PRODUCTO WHERE ID_Producto = %s", (seccion["producto"],))
+                        cursor.execute("SELECT COUNT(*) FROM PRODUCTO WHERE ID_Producto = %s", (seccion["id_producto"],))
                         existe = cursor.fetchone()[0]
                         if existe:
                             st.warning("⚠️ El producto con ese ID ya existe.")
@@ -88,7 +88,7 @@ def registrar_producto():
                                 )
                                 VALUES (%s, %s, %s, %s, %s, %s)
                             """, (
-                                seccion["producto"], seccion["nombre_producto"], seccion["descripcion"],
+                                seccion["id_producto"], seccion["nombre_producto"], seccion["descripcion"],
                                 seccion["precio"], seccion["tipo_producto"], id_emprendimiento
                             ))
 
@@ -99,7 +99,7 @@ def registrar_producto():
                             st.session_state.secciones_producto[sec_id] = {
                                 "id": sec_id,
                                 "emprendimiento": None,
-                                "producto": None,
+                                "id_producto": "",
                                 "nombre_producto": "",
                                 "descripcion": "",
                                 "precio": 0.0,
@@ -116,7 +116,7 @@ def registrar_producto():
             st.session_state.secciones_producto.append({
                 "id": nuevo_id,
                 "emprendimiento": None,
-                "producto": None,
+                "id_producto": "",
                 "nombre_producto": "",
                 "descripcion": "",
                 "precio": 0.0,
