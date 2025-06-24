@@ -7,9 +7,6 @@ def obtener_productos():
     con = obtener_conexion()
     df = pd.read_sql("SELECT * FROM PRODUCTO", con)
 
-    # Convertimos las fechas a tipo datetime (para evitar errores en el editor)
-    df["Fecha_vencimiento"] = pd.to_datetime(df["Fecha_vencimiento"], errors="coerce")
-
     con.close()
     return df
 
@@ -28,7 +25,6 @@ def actualizar_productos(df):
                 Tipo_producto=%s,
                 ID_Emprendimiento=%s,
                 Fecha_entrada=%s,
-                Fecha_vencimiento=%s
             WHERE ID_Producto=%s
         """, (
             str(row["Nombre_producto"]),
@@ -36,7 +32,6 @@ def actualizar_productos(df):
             float(row["Precio"]),
             str(row["Tipo_producto"]),
             str(row["ID_Emprendimiento"]),
-            row["Fecha_vencimiento"].date() if pd.notnull(row["Fecha_vencimiento"]) else None,
             str(row["ID_Producto"])
         ))
 
