@@ -4,7 +4,7 @@ from modulos.config.conexion import obtener_conexion
 def registrar_producto():
     st.header("📓 Registrar nuevo producto")
 
-    # Estado inicial
+    # Inicializar secciones de productos en el estado de sesión si no existen
     if "secciones_producto" not in st.session_state:
         st.session_state.secciones_producto = [{
             "id": 0,
@@ -124,7 +124,7 @@ def registrar_producto():
                 "tipo_producto": "Perecedero"
             })
             st.session_state.contador_secciones_producto += 1
-            st.rerun()
+            st.experimental_rerun()
 
     except Exception as e:
         st.error(f"❌ Error al cargar los datos de emprendimientos: {e}")
