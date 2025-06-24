@@ -100,5 +100,5 @@ def registrar_producto():
                                     Tipo_producto, ID_Emprendimiento
                                 )
                                 VALUES (%s, %s, %s, %s, %s, %s)
-                            """, (
+                            """, )
                                 seccion["id_producto"], sec_]()
