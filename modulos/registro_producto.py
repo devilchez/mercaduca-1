@@ -31,6 +31,18 @@ def registrar_producto():
             sec_id = seccion["id"]
             st.markdown(f"## Emprendimiento #{sec_id + 1}")
 
+            # Verificar que las claves necesarias estén presentes en cada sección
+            if "id_producto" not in seccion:
+                seccion["id_producto"] = ""
+            if "nombre_producto" not in seccion:
+                seccion["nombre_producto"] = ""
+            if "descripcion" not in seccion:
+                seccion["descripcion"] = ""
+            if "precio" not in seccion:
+                seccion["precio"] = 0.0
+            if "tipo_producto" not in seccion:
+                seccion["tipo_producto"] = "Perecedero"
+
             # Selección del emprendimiento
             opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
             nombre_emp_actual = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "-- Selecciona --")
@@ -52,7 +64,7 @@ def registrar_producto():
             # Si el emprendimiento cambia, reiniciar la sección
             if nuevo_id_emp != seccion["emprendimiento"]:
                 seccion["emprendimiento"] = nuevo_id_emp
-                seccion["id_producto"] = ""
+                seccion["id_producto"] = ""  # Reiniciar el id_producto
                 seccion["nombre_producto"] = ""
                 seccion["descripcion"] = ""
                 seccion["precio"] = 0.0
@@ -89,47 +101,4 @@ def registrar_producto():
                                 )
                                 VALUES (%s, %s, %s, %s, %s, %s)
                             """, (
-                                seccion["id_producto"], seccion["nombre_producto"], seccion["descripcion"],
-                                seccion["precio"], seccion["tipo_producto"], id_emprendimiento
-                            ))
-
-                            con.commit()
-                            st.success(f"✅ Producto #{sec_id + 1} registrado correctamente.")
-
-                            # Limpiar la selección y reiniciar el formulario
-                            st.session_state.secciones_producto[sec_id] = {
-                                "id": sec_id,
-                                "emprendimiento": None,
-                                "id_producto": "",
-                                "nombre_producto": "",
-                                "descripcion": "",
-                                "precio": 0.0,
-                                "tipo_producto": "Perecedero"
-                            }
-                            st.experimental_rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Error al registrar el producto: {e}")
-
-        # Agregar una nueva sección de producto
-        if st.button("➕ Agregar otro producto"):
-            nuevo_id = st.session_state.contador_secciones_producto
-            st.session_state.secciones_producto.append({
-                "id": nuevo_id,
-                "emprendimiento": None,
-                "id_producto": "",
-                "nombre_producto": "",
-                "descripcion": "",
-                "precio": 0.0,
-                "tipo_producto": "Perecedero"
-            })
-            st.session_state.contador_secciones_producto += 1
-            st.experimental_rerun()
-
-    except Exception as e:
-        st.error(f"❌ Error al cargar los datos de emprendimientos: {e}")
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'con' in locals():
-            con.close()
+                                seccion["id_producto"], sec_]()
