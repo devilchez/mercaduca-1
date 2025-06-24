@@ -9,7 +9,7 @@ def registrar_producto():
         st.session_state.secciones_producto = [{
             "id": 0,
             "emprendimiento": None,
-            "id_producto": "",
+            "id_producto": "",  # Inicializamos el id_producto como vacío
             "nombre_producto": "",
             "descripcion": "",
             "precio": 0.0,
