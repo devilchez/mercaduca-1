@@ -81,6 +81,7 @@ def registrar_producto():
                         if existe:
                             st.warning("⚠️ El producto con ese ID ya existe.")
                         else:
+                            # Insertamos el nuevo producto en la tabla PRODUCTO
                             cursor.execute("""
                                 INSERT INTO PRODUCTO (
                                     ID_Producto, Nombre_producto, Descripcion, Precio,
@@ -123,7 +124,7 @@ def registrar_producto():
                 "tipo_producto": "Perecedero"
             })
             st.session_state.contador_secciones_producto += 1
-            st.rerun()
+            st.experimental_rerun()
 
     except Exception as e:
         st.error(f"❌ Error al cargar los datos de emprendimientos: {e}")
