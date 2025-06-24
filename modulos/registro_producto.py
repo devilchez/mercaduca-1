@@ -21,7 +21,7 @@ def registrar_producto():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Cargar emprendimientos
+        # Cargar emprendimientos desde la tabla EMPRENDIMIENTO
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
