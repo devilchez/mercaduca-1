@@ -10,6 +10,7 @@ def registrar_producto():
             "id": 0,
             "emprendimiento": None,
             "producto": None,
+            "nombre_producto": "",
             "descripcion": "",
             "precio": 0.0,
             "tipo_producto": "Perecedero"
@@ -52,6 +53,10 @@ def registrar_producto():
             if nuevo_id_emp != seccion["emprendimiento"]:
                 seccion["emprendimiento"] = nuevo_id_emp
                 seccion["producto"] = None
+                seccion["nombre_producto"] = ""
+                seccion["descripcion"] = ""
+                seccion["precio"] = 0.0
+                seccion["tipo_producto"] = "Perecedero"
                 st.rerun()
 
             id_emprendimiento = seccion["emprendimiento"]
@@ -59,13 +64,14 @@ def registrar_producto():
 
             # Formulario del producto
             seccion["producto"] = st.text_input("ID del Producto", value=seccion["producto"], key=f"producto_{sec_id}")
+            seccion["nombre_producto"] = st.text_input("Nombre del Producto", value=seccion["nombre_producto"], key=f"nombre_producto_{sec_id}")
             seccion["descripcion"] = st.text_area("Descripción", value=seccion["descripcion"], key=f"descripcion_{sec_id}")
             seccion["precio"] = st.number_input("Precio", min_value=0.0, value=seccion["precio"], step=0.01, key=f"precio_{sec_id}")
             seccion["tipo_producto"] = st.selectbox("Tipo de producto", ["Perecedero", "No perecedero"], index=["Perecedero", "No perecedero"].index(seccion["tipo_producto"]), key=f"tipo_producto_{sec_id}")
 
             # Registrar el producto
             if st.button(f"Registrar producto #{sec_id + 1}", key=f"registrar_{sec_id}"):
-                if not all([seccion["producto"], seccion["descripcion"], seccion["precio"] > 0]):
+                if not all([seccion["producto"], seccion["nombre_producto"], seccion["descripcion"], seccion["precio"] > 0]):
                     st.warning("⚠️ Por favor, completa todos los campos.")
                 else:
                     try:
@@ -82,8 +88,8 @@ def registrar_producto():
                                 )
                                 VALUES (%s, %s, %s, %s, %s, %s)
                             """, (
-                                seccion["producto"], seccion["descripcion"], seccion["precio"],
-                                seccion["tipo_producto"], id_emprendimiento
+                                seccion["producto"], seccion["nombre_producto"], seccion["descripcion"],
+                                seccion["precio"], seccion["tipo_producto"], id_emprendimiento
                             ))
 
                             con.commit()
@@ -94,6 +100,7 @@ def registrar_producto():
                                 "id": sec_id,
                                 "emprendimiento": None,
                                 "producto": None,
+                                "nombre_producto": "",
                                 "descripcion": "",
                                 "precio": 0.0,
                                 "tipo_producto": "Perecedero"
@@ -110,12 +117,13 @@ def registrar_producto():
                 "id": nuevo_id,
                 "emprendimiento": None,
                 "producto": None,
+                "nombre_producto": "",
                 "descripcion": "",
                 "precio": 0.0,
                 "tipo_producto": "Perecedero"
             })
             st.session_state.contador_secciones_producto += 1
-            st.experimental_rerun()
+            st.rerun()
 
     except Exception as e:
         st.error(f"❌ Error al cargar los datos de emprendimientos: {e}")
