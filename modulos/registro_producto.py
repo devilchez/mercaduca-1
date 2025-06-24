@@ -79,14 +79,11 @@ def registrar_producto():
                 ))
 
                 con.commit()
-                st.success("✅ Producto registrado correctamente.")
-                
-                # Reiniciar la página para volver al inicio del formulario
-                st.rerun()
-
-                # Reiniciar la selección y limpiar el estado antes de que se recargue el selectbox
-                st.session_state.emprendimiento_seleccionado = "— Selecciona —"
-
+                st.success("✅ Producto registrado correctamente con ID: {id_producto}")
+                st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos":
+        []}]
+                st.session_state.contador_secciones = 1
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar el producto: {e}")
