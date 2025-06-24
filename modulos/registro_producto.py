@@ -4,94 +4,123 @@ from modulos.config.conexion import obtener_conexion
 def registrar_producto():
     st.header("📓 Registrar nuevo producto")
 
-    # Inicializar estado si no existe
-    if "emprendimiento_seleccionado" not in st.session_state:
-        st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+    # Estado inicial
+    if "secciones_producto" not in st.session_state:
+        st.session_state.secciones_producto = [{
+            "id": 0,
+            "emprendimiento": None,
+            "producto": None,
+            "descripcion": "",
+            "precio": 0.0,
+            "tipo_producto": "Perecedero"
+        }]
+        st.session_state.contador_secciones_producto = 1
 
-    # Obtener lista de emprendimientos
     try:
         con = obtener_conexion()
         cursor = con.cursor()
+
+        # Cargar emprendimientos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
-        cursor.close()
-        con.close()
-    except Exception as e:
-        st.error(f"❌ Error al cargar emprendimientos: {e}")
-        return
+        emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
 
-    if not emprendimientos:
-        st.warning("⚠️ No hay emprendimientos registrados.")
-        return
+        # Mostrar secciones de emprendimientos y productos
+        for seccion in st.session_state.secciones_producto:
+            sec_id = seccion["id"]
+            st.markdown(f"## Emprendimiento #{sec_id + 1}")
 
-    # Crear diccionario {nombre: id}
-    opciones = {nombre: id_ for id_, nombre in emprendimientos}
-    lista_nombres = ["— Selecciona —"] + list(opciones.keys())
+            # Selección del emprendimiento
+            opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
+            nombre_emp_actual = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "-- Selecciona --")
+            idx_emp_actual = opciones_emp.index(nombre_emp_actual) if nombre_emp_actual in opciones_emp else 0
 
-    # Aquí restablecemos el valor de st.session_state.emprendimiento_seleccionado antes de crear el selectbox
-    if st.session_state.emprendimiento_seleccionado not in lista_nombres:
-        st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+            emprendimiento_sel = st.selectbox(
+                f"Selecciona un emprendimiento",
+                opciones_emp,
+                index=idx_emp_actual,
+                key=f"emprend_{sec_id}"
+            )
 
-    # Renderizar el selectbox
-    seleccion = st.selectbox(
-        "Selecciona un emprendimiento",
-        lista_nombres,
-        index=lista_nombres.index(st.session_state.emprendimiento_seleccionado),
-        key="emprendimiento_seleccionado"
-    )
+            if emprendimiento_sel == "-- Selecciona --":
+                st.info("🔹 Selecciona un emprendimiento para continuar.")
+                continue
 
-    # Si no se ha seleccionado un emprendimiento, detener
-    if seleccion == "— Selecciona —":
-        st.info("🔹 Selecciona un emprendimiento para continuar.")
-        st.stop()
+            nuevo_id_emp = emprend_dict[emprendimiento_sel]
 
-    id_emprendimiento = opciones[seleccion]
-    st.text_input("ID del Emprendimiento", value=id_emprendimiento, disabled=True)
+            # Si el emprendimiento cambia, reiniciar la sección
+            if nuevo_id_emp != seccion["emprendimiento"]:
+                seccion["emprendimiento"] = nuevo_id_emp
+                seccion["producto"] = None
+                st.rerun()
 
-    # Formulario del producto
-    id_producto = st.text_input("ID del Producto")
-    nombre_producto = st.text_input("Nombre del producto")
-    descripcion = st.text_area("Descripción")
-    precio = st.number_input("Precio", min_value=0.0, step=0.01)
-    tipo_producto = st.selectbox("Tipo de producto", ["Perecedero", "No perecedero"])
+            id_emprendimiento = seccion["emprendimiento"]
+            st.text_input("ID del Emprendimiento", value=id_emprendimiento, disabled=True)
 
-    if st.button("Registrar"):
-        if not all([id_producto, nombre_producto, descripcion, precio, tipo_producto, id_emprendimiento]):
-            st.warning("⚠️ Por favor, completa todos los campos.")
-        else:
-            try:
-                # Verificar la conexión y ejecutar la inserción
-                con = obtener_conexion()
-                cursor = con.cursor()
+            # Formulario del producto
+            seccion["producto"] = st.text_input("ID del Producto", value=seccion["producto"], key=f"producto_{sec_id}")
+            seccion["descripcion"] = st.text_area("Descripción", value=seccion["descripcion"], key=f"descripcion_{sec_id}")
+            seccion["precio"] = st.number_input("Precio", min_value=0.0, value=seccion["precio"], step=0.01, key=f"precio_{sec_id}")
+            seccion["tipo_producto"] = st.selectbox("Tipo de producto", ["Perecedero", "No perecedero"], index=["Perecedero", "No perecedero"].index(seccion["tipo_producto"]), key=f"tipo_producto_{sec_id}")
 
-                # Comprobamos si el producto ya existe para evitar duplicados
-                cursor.execute("SELECT COUNT(*) FROM PRODUCTO WHERE ID_Producto = %s", (id_producto,))
-                existe = cursor.fetchone()[0]
-                if existe:
-                    st.warning("⚠️ El producto con ese ID ya existe.")
+            # Registrar el producto
+            if st.button(f"Registrar producto #{sec_id + 1}", key=f"registrar_{sec_id}"):
+                if not all([seccion["producto"], seccion["descripcion"], seccion["precio"] > 0]):
+                    st.warning("⚠️ Por favor, completa todos los campos.")
                 else:
-                    cursor.execute("""
-                        INSERT INTO PRODUCTO (
-                            ID_Producto, Nombre_producto, Descripcion, Precio,
-                            Tipo_producto, ID_Emprendimiento
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s)
-                    """, (
-                        id_producto, nombre_producto, descripcion, precio,
-                        tipo_producto, id_emprendimiento
-                    ))
+                    try:
+                        # Comprobamos si el producto ya existe
+                        cursor.execute("SELECT COUNT(*) FROM PRODUCTO WHERE ID_Producto = %s", (seccion["producto"],))
+                        existe = cursor.fetchone()[0]
+                        if existe:
+                            st.warning("⚠️ El producto con ese ID ya existe.")
+                        else:
+                            cursor.execute("""
+                                INSERT INTO PRODUCTO (
+                                    ID_Producto, Nombre_producto, Descripcion, Precio,
+                                    Tipo_producto, ID_Emprendimiento
+                                )
+                                VALUES (%s, %s, %s, %s, %s, %s)
+                            """, (
+                                seccion["producto"], seccion["descripcion"], seccion["precio"],
+                                seccion["tipo_producto"], id_emprendimiento
+                            ))
 
-                    con.commit()
-                    st.success("✅ Producto registrado correctamente.")
+                            con.commit()
+                            st.success(f"✅ Producto #{sec_id + 1} registrado correctamente.")
 
-                    # Restablecer la selección antes de la recarga
-                    st.session_state.emprendimiento_seleccionado = "— Selecciona —"
+                            # Limpiar la selección y reiniciar el formulario
+                            st.session_state.secciones_producto[sec_id] = {
+                                "id": sec_id,
+                                "emprendimiento": None,
+                                "producto": None,
+                                "descripcion": "",
+                                "precio": 0.0,
+                                "tipo_producto": "Perecedero"
+                            }
+                            st.experimental_rerun()
 
-                    # Recargar la página para reiniciar el formulario
-                    st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error al registrar el producto: {e}")
 
-            except Exception as e:
-                st.error(f"❌ Error al registrar el producto: {e}")
-            finally:
-                if 'cursor' in locals(): cursor.close()
-                if 'con' in locals(): con.close()
+        # Agregar una nueva sección de producto
+        if st.button("➕ Agregar otro producto"):
+            nuevo_id = st.session_state.contador_secciones_producto
+            st.session_state.secciones_producto.append({
+                "id": nuevo_id,
+                "emprendimiento": None,
+                "producto": None,
+                "descripcion": "",
+                "precio": 0.0,
+                "tipo_producto": "Perecedero"
+            })
+            st.session_state.contador_secciones_producto += 1
+            st.experimental_rerun()
+
+    except Exception as e:
+        st.error(f"❌ Error al cargar los datos de emprendimientos: {e}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'con' in locals():
+            con.close()
