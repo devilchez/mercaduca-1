@@ -79,15 +79,15 @@ def registrar_producto():
                 ))
 
                 con.commit()
-                st.success("✅ Producto registrado correctamente con ID: {id_producto}")
-                st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos":
-        []}]
+                st.success(f"✅ Producto registrado correctamente con ID: {id_producto}")
+                st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
                 st.session_state.contador_secciones = 1
-                    st.rerun()
+                st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar el producto: {e}")
             finally:
-                if 'cursor' in locals(): cursor.close()
-                if 'con' in locals(): con.close()
-
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'con' in locals():
+                    con.close()
