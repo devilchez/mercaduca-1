@@ -48,8 +48,14 @@ def reporte_ventas():
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Convertir la hora de venta (en formato TIME) a string con el formato correcto
-        df['Hora Venta'] = df['Hora Venta'].apply(lambda x: x.strftime('%I:%M %p') if isinstance(x, datetime) else str(x))
+        # Formatear la hora_venta para mostrar en el formato adecuado (HH:MM AM/PM)
+        df['Hora Venta'] = df['Hora Venta'].apply(
+            lambda x: x.strftime('%I:%M %p') if isinstance(x, datetime) else x
+        )
+
+        # Si 'hora_venta' es un string de tipo TIME, lo formateamos directamente
+        if df['Hora Venta'].dtype == 'object':
+            df['Hora Venta'] = pd.to_datetime(df['Hora Venta'], format='%H:%M:%S').dt.strftime('%I:%M %p')
 
         # Mostrar detalles de ventas
         st.markdown("---")
@@ -138,3 +144,4 @@ def reporte_ventas():
         # Cerrar la conexión a la base de datos
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
+
