@@ -66,8 +66,10 @@ def reporte_ventas():
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Convertir la columna 'Hora Venta' a formato AM/PM
-        df['Hora Venta'] = df['Hora Venta'].apply(lambda x: x.strftime('%I:%M %p') if isinstance(x, datetime) else x)
+        # Convertir la columna 'Hora Venta' a formato AM/PM solo si no es nula
+        df['Hora Venta'] = df['Hora Venta'].apply(
+            lambda x: x.strftime('%I:%M %p') if pd.notna(x) and isinstance(x, pd.Timestamp) else "Sin hora"
+        )
 
         # Mostrar detalles de ventas
         st.markdown("---")
