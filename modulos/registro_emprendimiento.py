@@ -14,7 +14,7 @@ def registrar_emprendimiento():
     nombre_emprendedor = st.text_input("Nombre del emprendedor")
     telefono = st.text_input("Teléfono")
     carne_uca = st.text_input("Carné UCA", max_chars=10)
-    dui = st.text_input("DUI (máximo 10 dígitos)", max_chars=10)
+    dui = st.text_input("DUI", max_chars=10)
     facultad = st.selectbox("Facultad", [
         "Facultad de Ciencias Económicas y Empresariales",
         "Facultad de Ciencias Sociales y Humanidades",
