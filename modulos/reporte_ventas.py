@@ -24,42 +24,30 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Detectar tipo de conector
-        db_module = con.__class__.__module__
-        is_sqlite = 'sqlite3' in db_module
+        # Generar query interpolando las fechas directamente
+        fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
+        fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
-        # Query con sintaxis de parámetros apropiada
-        if is_sqlite:
-            query = """
-                SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
-                       v.fecha_venta, v.hora_venta, pr.ID_Producto
-                FROM VENTA v
-                JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
-                JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
-                JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
-                WHERE v.fecha_venta BETWEEN ? AND ?
-                ORDER BY v.ID_Venta DESC
-            """
-            cursor.execute(query, (fecha_inicio.strftime('%Y-%m-%d'), fecha_fin.strftime('%Y-%m-%d')))
-        else:
-            query = """
-                SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
-                       v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
-                FROM VENTA v
-                JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
-                JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
-                JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
-                WHERE v.fecha_venta BETWEEN %s AND %s
-                ORDER BY v.ID_Venta DESC
-            """
-            cursor.execute(query, (fecha_inicio.strftime('%Y-%m-%d'), fecha_fin.strftime('%Y-%m-%d')))
+        query = f"""
+            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
+                   v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
+            FROM VENTA v
+            JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
+            JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
+            JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
+            WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}'
+            ORDER BY v.ID_Venta DESC
+        """
 
+        st.code(query)  # Opcional: muestra la consulta que se ejecutará
+        cursor.execute(query)
         rows = cursor.fetchall()
 
         if not rows:
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
+        # Crear DataFrame
         df = pd.DataFrame(rows, columns=[
             "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", 
             "Fecha Venta", "Hora Venta", "ID_Producto"
@@ -84,33 +72,30 @@ def reporte_ventas():
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
                     try:
+                        # Eliminar el producto de la venta
                         cursor.execute(
-                            "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = ? AND ID_Producto = ?" if is_sqlite 
-                            else "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
-                            (row['ID_Venta'], row['ID_Producto'])
+                            f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {row['ID_Venta']} AND ID_Producto = {row['ID_Producto']}"
                         )
                         con.commit()
 
+                        # Verificar si ya no hay productos en la venta
                         cursor.execute(
-                            "SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = ?" if is_sqlite 
-                            else "SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s",
-                            (row['ID_Venta'],)
+                            f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {row['ID_Venta']}"
                         )
                         count = cursor.fetchone()[0]
                         if count == 0:
                             cursor.execute(
-                                "DELETE FROM VENTA WHERE ID_Venta = ?" if is_sqlite 
-                                else "DELETE FROM VENTA WHERE ID_Venta = %s",
-                                (row['ID_Venta'],)
+                                f"DELETE FROM VENTA WHERE ID_Venta = {row['ID_Venta']}"
                             )
                             con.commit()
                             st.success(f"✅ Venta ID {row['ID_Venta']} eliminada completamente.")
+
                         st.rerun()
 
                     except Exception as e:
                         st.error(f"❌ Error al eliminar el producto: {e}")
 
-        # Exportación
+        # Exportar datos
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
         col1, col2 = st.columns(2)
@@ -132,6 +117,7 @@ def reporte_ventas():
             pdf.set_font("Arial", size=12)
             pdf.cell(200, 10, txt="Reporte de Ventas", ln=True, align='C')
             pdf.set_font("Arial", size=10)
+
             for index, row in df.iterrows():
                 texto = (
                     f"{row['Emprendimiento']} | {row['Producto']} | "
