@@ -68,7 +68,7 @@ def reporte_ventas():
 
         # Convertir la columna 'Hora Venta' a formato AM/PM solo si no es nula
         df['Hora Venta'] = df['Hora Venta'].apply(
-            lambda x: x.strftime('%I:%M %p') if pd.notna(x) and isinstance(x, pd.Timestamp) else x if pd.notna(x) else "Sin hora"
+            lambda x: str(x).split(' ')[-1][:5] if pd.notna(x) else "Sin hora"
         )
 
         # Mostrar detalles de ventas
@@ -85,7 +85,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Hora de Venta:** {row['Hora Venta']}  "  # Hora en formato AM/PM
+                    f"**Hora de Venta:** {row['Hora Venta']}  "  # Hora en formato HH:MM
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
