@@ -134,15 +134,23 @@ def mostrar_ventas():
 
             if st.button("✅ Registrar venta"):
                 try:
-                    fecha_venta = datetime.now()
-                    hora_venta = fecha_venta.time()
+                    # Obtener fecha y hora en el mismo instante
+                    ahora = datetime.now()
+                    fecha_venta = ahora.date()
+                    hora_venta = ahora.time()  # Captura la hora exacta
+
                     total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
 
+                    # Registrar venta (INCLUYE hora_venta correctamente)
                     cursor.execute(
                         "INSERT INTO VENTA (fecha_venta, hora_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s, %s)",
-                        (fecha_venta.date(), hora_venta, tipo_pago, total_cantidad_vendida)
+                        (fecha_venta, hora_venta, tipo_pago, total_cantidad_vendida)
                     )
                     id_venta = cursor.lastrowid
+
+                    # Mostrar la hora y fecha registrada para verificación
+                    st.write("📅 Fecha registrada:", fecha_venta)
+                    st.write("⏰ Hora registrada:", hora_venta.strftime('%I:%M %p'))  # Formato AM/PM
 
                     for p in productos_vender:
                         id_producto = p["id_producto"]
@@ -156,6 +164,7 @@ def mostrar_ventas():
 
                         restante = cantidad_vendida
 
+                        # Seleccionamos los productos con Stock > 0 y la Fecha_vencimiento más cercana
                         cursor.execute(
                             "SELECT ID_Inventario, Stock, Fecha_vencimiento FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_vencimiento ASC",
                             (id_producto,)
@@ -168,14 +177,14 @@ def mostrar_ventas():
                             if stock <= restante:
                                 cursor.execute(
                                     "UPDATE INVENTARIO SET Stock = 0, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
-                                    (fecha_venta, stock, id_inventario)
+                                    (ahora, stock, id_inventario)
                                 )
                                 restante -= stock
                             else:
                                 nuevo_stock = stock - restante
                                 cursor.execute(
                                     "UPDATE INVENTARIO SET Stock = %s, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
-                                    (nuevo_stock, fecha_venta, restante, id_inventario)
+                                    (nuevo_stock, ahora, restante, id_inventario)
                                 )
                                 restante = 0
 
@@ -200,3 +209,4 @@ def mostrar_ventas():
             cursor.close()
         if 'con' in locals():
             con.close()
+
