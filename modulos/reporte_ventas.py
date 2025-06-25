@@ -73,7 +73,7 @@ def reporte_ventas():
 
         # Mostrar detalles de ventas
         st.markdown("---")
-        st.markdown("### 🗂 Detalles de Ventas")
+        st.markdown("### 📁 Detalles de Ventas")
         
         # Iterar sobre las filas del DataFrame para mostrar los productos vendidos
         for index, row in df.iterrows():
