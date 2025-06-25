@@ -24,7 +24,7 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Consulta SQL para obtener las ventas en el rango de fechas
+        # Consulta SQL para obtener ventas
         query = """
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
                    v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
@@ -35,7 +35,9 @@ def reporte_ventas():
             WHERE v.fecha_venta BETWEEN %s AND %s
             ORDER BY v.ID_Venta DESC
         """
-        cursor.execute(query, (fecha_inicio, fecha_fin))
+
+        # Convertir fechas a string
+        cursor.execute(query, (fecha_inicio.strftime('%Y-%m-%d'), fecha_fin.strftime('%Y-%m-%d')))
         rows = cursor.fetchall()
 
         if not rows:
