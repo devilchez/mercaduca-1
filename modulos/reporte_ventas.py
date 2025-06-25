@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from modulos.config.conexion import obtener_conexion
 from datetime import datetime
+import pytz
 from io import BytesIO
 from fpdf import FPDF
 
@@ -66,14 +67,17 @@ def reporte_ventas():
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Convertir la columna 'Hora Venta' a formato AM/PM solo si no es nula
+        # Convertir la columna 'Hora Venta' a la zona horaria de Centroamérica (UTC-6)
+        # Usamos pytz para convertir la hora
+        timezone = pytz.timezone('America/El_Salvador')
         df['Hora Venta'] = df['Hora Venta'].apply(
-            lambda x: str(x).split(' ')[-1][:5] if pd.notna(x) else "Sin hora"
+            lambda x: (x.astimezone(timezone).strftime('%I:%M %p') if pd.notna(x) else "Sin hora")
+            if isinstance(x, pd.Timestamp) else "Sin hora"
         )
 
         # Mostrar detalles de ventas
         st.markdown("---")
-        st.markdown("### 🖋️ Detalles de Ventas")
+        st.markdown("### 🗂 Detalles de Ventas")
         
         # Iterar sobre las filas del DataFrame para mostrar los productos vendidos
         for index, row in df.iterrows():
@@ -85,7 +89,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Hora de Venta:** {row['Hora Venta']}  "  # Hora en formato HH:MM
+                    f"**Hora de Venta:** {row['Hora Venta']}  "  # Hora en formato HH:MM AM/PM
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
