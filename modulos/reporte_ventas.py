@@ -24,10 +24,10 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Consulta SQL para obtener las ventas en el rango de fechas, incluyendo la hora de venta
+        # Consulta SQL para obtener las ventas en el rango de fechas
         query = """
-            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, 
-                   DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
+            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
+                   v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
             FROM VENTA v
             JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
@@ -35,8 +35,6 @@ def reporte_ventas():
             WHERE v.fecha_venta BETWEEN %s AND %s
             ORDER BY v.ID_Venta DESC
         """
-
-        # Ejecutar la consulta pasando los parámetros correctamente
         cursor.execute(query, (fecha_inicio, fecha_fin))
         rows = cursor.fetchall()
 
@@ -44,17 +42,18 @@ def reporte_ventas():
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
-        # Crear DataFrame con los resultados de la consulta
+        # Crear DataFrame con los resultados
         df = pd.DataFrame(rows, columns=[
-            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta", "Hora Venta", "ID_Producto"
+            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", 
+            "Fecha Venta", "Hora Venta", "ID_Producto"
         ])
+        df["Hora Venta"] = df["Hora Venta"].astype(str)
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
         # Mostrar detalles de ventas
         st.markdown("---")
         st.markdown("### 🗂 Detalles de Ventas")
-        
-        # Iterar sobre las filas del DataFrame para mostrar los productos vendidos
+
         for index, row in df.iterrows():
             col1, col2 = st.columns([6, 1])
             with col1:
@@ -64,7 +63,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Hora de Venta:** {row['Hora Venta']}  "
+                    f"**Hora de Venta:** {row['Hora Venta']}"
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
@@ -73,10 +72,8 @@ def reporte_ventas():
                             "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                             (row['ID_Venta'], row['ID_Producto'])
                         )
-                        con.commit()  # Confirmar cambios en la base de datos
-                        st.success("¡Producto eliminado exitosamente de la venta!")
+                        con.commit()
 
-                        # Verificar si ya no hay productos asociados a la venta
                         cursor.execute(
                             "SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s",
                             (row['ID_Venta'],)
@@ -87,12 +84,12 @@ def reporte_ventas():
                             con.commit()
                             st.success(f"✅ Venta ID {row['ID_Venta']} eliminada completamente.")
 
-                        st.rerun()  # Recargar la página para reflejar los cambios
+                        st.rerun()
 
                     except Exception as e:
                         st.error(f"❌ Error al eliminar el producto: {e}")
 
-        # Opciones de exportación de los datos a Excel y PDF
+        # Exportar datos
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
         col1, col2 = st.columns(2)
@@ -118,7 +115,11 @@ def reporte_ventas():
             pdf.set_font("Arial", size=10)
 
             for index, row in df.iterrows():
-                texto = f"{row['Emprendimiento']} | {row['Producto']} | {row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | Hora: {row['Hora Venta']}"
+                texto = (
+                    f"{row['Emprendimiento']} | {row['Producto']} | "
+                    f"{row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | "
+                    f"Hora: {row['Hora Venta']}"
+                )
                 pdf.cell(0, 10, txt=texto, ln=True)
 
             pdf_buffer = BytesIO()
@@ -134,6 +135,5 @@ def reporte_ventas():
         st.error(f"❌ Error al generar el reporte: {e}")
 
     finally:
-        # Cerrar la conexión a la base de datos
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
