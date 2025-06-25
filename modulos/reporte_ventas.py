@@ -24,18 +24,36 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Consulta SQL para obtener las ventas en el rango de fechas
+        # Consulta SQL para obtener todos los emprendimientos
+        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
+        emprendimientos = cursor.fetchall()
+
+        # Lista desplegable para seleccionar el emprendimiento
+        emprendimiento_seleccionado = st.selectbox(
+            "Selecciona un emprendimiento",
+            ["-- Todos --"] + [emprendimiento[1] for emprendimiento in emprendimientos]
+        )
+
+        # Consulta SQL para obtener las ventas en el rango de fechas y, si aplica, por emprendimiento
         query = """
-            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, pr.ID_Producto
+            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, v.hora_venta, pr.ID_Producto
             FROM VENTA v
             JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN %s AND %s
-            ORDER BY v.ID_Venta DESC
         """
+        # Filtrar por emprendimiento si se seleccionó uno específico
+        if emprendimiento_seleccionado != "-- Todos --":
+            query += " AND e.Nombre_emprendimiento = %s"
 
-        cursor.execute(query, (fecha_inicio, fecha_fin))
+        query += " ORDER BY v.ID_Venta DESC"
+
+        params = (fecha_inicio, fecha_fin)
+        if emprendimiento_seleccionado != "-- Todos --":
+            params += (emprendimiento_seleccionado,)
+
+        cursor.execute(query, params)
         rows = cursor.fetchall()
 
         if not rows:
@@ -44,7 +62,7 @@ def reporte_ventas():
 
         # Crear DataFrame con los resultados de la consulta
         df = pd.DataFrame(rows, columns=[
-            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta", "ID_Producto"
+            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", "Fecha Venta", "Hora Venta", "ID_Producto"
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
@@ -61,7 +79,8 @@ def reporte_ventas():
                     f"**Emprendimiento:** {row['Emprendimiento']}  \n"
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
-                    f"**Total:** ${row['Total']:.2f}  "
+                    f"**Total:** ${row['Total']:.2f}  \n"
+                    f"**Hora de Venta:** {row['Hora Venta'].strftime('%I:%M %p')}  "  # Hora en formato AM/PM
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
@@ -134,3 +153,4 @@ def reporte_ventas():
         # Cerrar la conexión a la base de datos
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
+
