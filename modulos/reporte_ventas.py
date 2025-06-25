@@ -26,7 +26,8 @@ def reporte_ventas():
 
         # Consulta SQL para obtener las ventas en el rango de fechas, incluyendo la hora de venta
         query = """
-            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, v.hora_venta, pr.ID_Producto
+            SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, 
+                   DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
             FROM VENTA v
             JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
@@ -135,4 +136,3 @@ def reporte_ventas():
         # Cerrar la conexión a la base de datos
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
-
