@@ -48,11 +48,6 @@ def reporte_ventas():
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Convertir la hora_venta a formato de 12 horas (AM/PM)
-        df['Hora Venta'] = df['Hora Venta'].apply(
-            lambda x: x.strftime('%I:%M %p') if pd.notnull(x) else 'Sin hora'
-        )
-
         # Mostrar detalles de ventas
         st.markdown("---")
         st.markdown("### 🗂 Detalles de Ventas")
@@ -140,3 +135,4 @@ def reporte_ventas():
         # Cerrar la conexión a la base de datos
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
+
