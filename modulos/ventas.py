@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+import pytz
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_ventas():
@@ -134,10 +135,11 @@ def mostrar_ventas():
 
             if st.button("✅ Registrar venta"):
                 try:
-                    # Obtener fecha y hora en el mismo instante
-                    ahora = datetime.now()
+                    # Obtener la hora y fecha en la zona horaria de Centroamérica
+                    timezone = pytz.timezone('America/El_Salvador')
+                    ahora = datetime.now(timezone)
                     fecha_venta = ahora.date()
-                    hora_venta = ahora.time()  # Captura la hora exacta
+                    hora_venta = ahora.time()
 
                     total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
 
@@ -209,4 +211,3 @@ def mostrar_ventas():
             cursor.close()
         if 'con' in locals():
             con.close()
-
