@@ -41,7 +41,6 @@ def mostrar_ventas():
             sec_id = seccion["id"]
             st.markdown(f"## Emprendimiento #{sec_id + 1}")
 
-            # Mostrar selectbox siempre
             opciones_emp = ["-- Selecciona --"] + list(emprend_dict.keys())
             nombre_emp_actual = next((k for k, v in emprend_dict.items() if v == seccion["emprendimiento"]), "-- Selecciona --")
             idx_emp_actual = opciones_emp.index(nombre_emp_actual) if nombre_emp_actual in opciones_emp else 0
@@ -136,11 +135,12 @@ def mostrar_ventas():
             if st.button("✅ Registrar venta"):
                 try:
                     fecha_venta = datetime.now()
+                    hora_venta = fecha_venta.time()
                     total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
 
                     cursor.execute(
-                        "INSERT INTO VENTA (fecha_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s)",
-                        (fecha_venta, tipo_pago, total_cantidad_vendida)
+                        "INSERT INTO VENTA (fecha_venta, hora_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s, %s)",
+                        (fecha_venta.date(), hora_venta, tipo_pago, total_cantidad_vendida)
                     )
                     id_venta = cursor.lastrowid
 
@@ -156,7 +156,6 @@ def mostrar_ventas():
 
                         restante = cantidad_vendida
 
-                        # Seleccionamos los productos con Stock > 0 y la Fecha_vencimiento más cercana
                         cursor.execute(
                             "SELECT ID_Inventario, Stock, Fecha_vencimiento FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_vencimiento ASC",
                             (id_producto,)
