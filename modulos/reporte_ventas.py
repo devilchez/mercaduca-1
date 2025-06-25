@@ -48,12 +48,12 @@ def reporte_ventas():
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Formatear la hora de venta (si está en formato TIME, para mostrar en AM/PM)
-        df['Hora Venta'] = pd.to_datetime(df['Hora Venta'], format='%H:%M:%S').dt.strftime('%I:%M %p')
+        # Convertir la hora de venta (en formato TIME) a string con el formato correcto
+        df['Hora Venta'] = df['Hora Venta'].apply(lambda x: x.strftime('%I:%M %p') if isinstance(x, datetime) else str(x))
 
         # Mostrar detalles de ventas
         st.markdown("---")
-        st.markdown("### 🖋️ Detalles de Ventas")
+        st.markdown("### 🗂 Detalles de Ventas")
         
         # Iterar sobre las filas del DataFrame para mostrar los productos vendidos
         for index, row in df.iterrows():
