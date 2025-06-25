@@ -3,3 +3,4 @@ mysql-connector-python
 fpdf2
 xlsxwriter
 pandas
+pytz
