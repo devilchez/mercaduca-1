@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from modulos.config.conexion import obtener_conexion
 from datetime import datetime
-import pytz
 from io import BytesIO
 from fpdf import FPDF
 
@@ -25,17 +24,7 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Consulta SQL para obtener todos los emprendimientos
-        cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
-        emprendimientos = cursor.fetchall()
-
-        # Lista desplegable para seleccionar el emprendimiento
-        emprendimiento_seleccionado = st.selectbox(
-            "Selecciona un emprendimiento",
-            ["-- Todos --"] + [emprendimiento[1] for emprendimiento in emprendimientos]
-        )
-
-        # Consulta SQL para obtener las ventas en el rango de fechas y, si aplica, por emprendimiento
+        # Consulta SQL para obtener las ventas en el rango de fechas, incluyendo la hora de venta
         query = """
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, v.fecha_venta, v.hora_venta, pr.ID_Producto
             FROM VENTA v
@@ -43,18 +32,10 @@ def reporte_ventas():
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN %s AND %s
+            ORDER BY v.ID_Venta DESC
         """
-        # Filtrar por emprendimiento si se seleccionó uno específico
-        if emprendimiento_seleccionado != "-- Todos --":
-            query += " AND e.Nombre_emprendimiento = %s"
 
-        query += " ORDER BY v.ID_Venta DESC"
-
-        params = (fecha_inicio, fecha_fin)
-        if emprendimiento_seleccionado != "-- Todos --":
-            params += (emprendimiento_seleccionado,)
-
-        cursor.execute(query, params)
+        cursor.execute(query, (fecha_inicio, fecha_fin))
         rows = cursor.fetchall()
 
         if not rows:
@@ -67,17 +48,12 @@ def reporte_ventas():
         ])
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
-        # Convertir la columna 'Hora Venta' a la zona horaria de Centroamérica (UTC-6)
-        # Usamos pytz para convertir la hora
-        timezone = pytz.timezone('America/El_Salvador')
-        df['Hora Venta'] = df['Hora Venta'].apply(
-            lambda x: (x.astimezone(timezone).strftime('%I:%M %p') if pd.notna(x) else "Sin hora")
-            if isinstance(x, pd.Timestamp) else "Sin hora"
-        )
+        # Formatear la hora de venta (si está en formato TIME, para mostrar en AM/PM)
+        df['Hora Venta'] = pd.to_datetime(df['Hora Venta'], format='%H:%M:%S').dt.strftime('%I:%M %p')
 
         # Mostrar detalles de ventas
         st.markdown("---")
-        st.markdown("### 🗂 Detalles de Ventas")
+        st.markdown("### 🖋️ Detalles de Ventas")
         
         # Iterar sobre las filas del DataFrame para mostrar los productos vendidos
         for index, row in df.iterrows():
@@ -89,7 +65,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Hora de Venta:** {row['Hora Venta']}  "  # Hora en formato HH:MM AM/PM
+                    f"**Hora de Venta:** {row['Hora Venta']}  "
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
@@ -143,7 +119,7 @@ def reporte_ventas():
             pdf.set_font("Arial", size=10)
 
             for index, row in df.iterrows():
-                texto = f"{row['Emprendimiento']} | {row['Producto']} | {row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f}"
+                texto = f"{row['Emprendimiento']} | {row['Producto']} | {row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | Hora: {row['Hora Venta']}"
                 pdf.cell(0, 10, txt=texto, ln=True)
 
             pdf_buffer = BytesIO()
