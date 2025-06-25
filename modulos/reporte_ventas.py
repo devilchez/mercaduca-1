@@ -36,6 +36,7 @@ def reporte_ventas():
             ORDER BY v.ID_Venta DESC
         """
 
+        # Ejecutar la consulta pasando los parámetros correctamente
         cursor.execute(query, (fecha_inicio, fecha_fin))
         rows = cursor.fetchall()
 
