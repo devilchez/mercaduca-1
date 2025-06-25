@@ -68,12 +68,12 @@ def reporte_ventas():
 
         # Convertir la columna 'Hora Venta' a formato AM/PM solo si no es nula
         df['Hora Venta'] = df['Hora Venta'].apply(
-            lambda x: x.strftime('%I:%M %p') if pd.notna(x) and isinstance(x, pd.Timestamp) else "Sin hora"
+            lambda x: x.strftime('%I:%M %p') if pd.notna(x) and isinstance(x, pd.Timestamp) else x if pd.notna(x) else "Sin hora"
         )
 
         # Mostrar detalles de ventas
         st.markdown("---")
-        st.markdown("### 📁 Detalles de Ventas")
+        st.markdown("### 🖋️ Detalles de Ventas")
         
         # Iterar sobre las filas del DataFrame para mostrar los productos vendidos
         for index, row in df.iterrows():
