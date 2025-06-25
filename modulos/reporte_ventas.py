@@ -39,7 +39,7 @@ def reporte_ventas():
             ORDER BY v.ID_Venta DESC
         """
 
-        st.code(query)  # Opcional: muestra la consulta que se ejecutará
+
         cursor.execute(query)
         rows = cursor.fetchall()
 
