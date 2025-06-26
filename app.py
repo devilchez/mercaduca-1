@@ -99,7 +99,7 @@ else:
 
     if st.sidebar.button("🔓 Cerrar sesión"):
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
 
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
