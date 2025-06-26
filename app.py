@@ -12,6 +12,8 @@ from modulos.registro_producto import registrar_producto
 from modulos.emprendimientos import mostrar_emprendimientos
 from modulos.productos import mostrar_productos
 from modulos.inventario import mostrar_inventario
+from modulos.dashboard import dashboard
+
 
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
@@ -93,6 +95,8 @@ else:
 
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
+    elif opcion == "Dashboard":
+        dashboard()
     elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
         reporte_ventas()
     elif opcion == "Abastecimiento" and tipo in ["Administrador"]:
@@ -107,5 +111,6 @@ else:
         mostrar_productos()
     elif opcion == "Inventario" and tipo in ["Administrador"]:
         mostrar_inventario()
+
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
