@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from modulos.config.conexion import obtener_conexion
 
 def mostrar_inventario():
@@ -9,9 +9,9 @@ def mostrar_inventario():
     # Filtros de fecha para productos abastecidos
     col1, col2 = st.columns(2)
     with col1:
-        fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1))
+        fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1).date())
     with col2:
-        fecha_fin = st.date_input("Hasta", value=datetime.today())
+        fecha_fin = st.date_input("Hasta", value=datetime.today().date())
 
     if fecha_inicio > fecha_fin:
         st.warning("⚠️ La fecha de inicio no puede ser mayor que la fecha de fin.")
@@ -71,12 +71,11 @@ def mostrar_inventario():
             FROM INVENTARIO i
             JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
-            WHERE i.Fecha_vencimiento BETWEEN NOW() AND %s
+            WHERE i.Fecha_vencimiento BETWEEN CURDATE() AND %s
               AND (i.Cantidad_ingresada - i.Cantidad_salida) > 0
         """
 
-        params = [fecha_limite]
-
+        params = [fecha_limite.date()]
         if emprendimiento_seleccionado != "Todos":
             query += " AND e.Nombre_emprendimiento = %s"
             params.append(emprendimiento_seleccionado)
@@ -88,13 +87,31 @@ def mostrar_inventario():
         if productos_proximos_vencer:
             df_proximos_vencer = pd.DataFrame(productos_proximos_vencer, columns=["Emprendimiento", "Producto", "Stock Disponible", "Fecha de Vencimiento"])
 
-            # Agregar columna de días restantes
+            # Añadir columna de días restantes
+            hoy = date.today()
             df_proximos_vencer["Días Restantes"] = df_proximos_vencer["Fecha de Vencimiento"].apply(
-                lambda x: (x - datetime.today()).days
+                lambda x: (x - hoy).days
             )
 
+            # Añadir advertencia visual con emojis
+            def advertencia(dias):
+                if dias <= 0:
+                    return "⚠️ Vencido"
+                elif dias <= 3:
+                    return f"🔴 {dias} días"
+                elif dias <= 7:
+                    return f"🟠 {dias} días"
+                elif dias <= 15:
+                    return f"🟡 {dias} días"
+                else:
+                    return f"🟢 {dias} días"
+
+            df_proximos_vencer["Días Restantes"] = df_proximos_vencer["Días Restantes"].apply(advertencia)
+
+            # Ordenar por vencimiento cercano
             st.subheader("📅 Productos Próximos a Vencer (Próximos 30 días)")
-            st.dataframe(df_proximos_vencer)
+            st.dataframe(df_proximos_vencer.sort_values("Fecha de Vencimiento"))
+
         else:
             st.info("No hay productos próximos a vencer en los próximos 30 días.")
 
