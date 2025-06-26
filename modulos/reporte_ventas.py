@@ -19,9 +19,6 @@ def reporte_ventas():
         st.warning("⚠️ La fecha de inicio no puede ser mayor que la de fin.")
         return
 
-    # Depuración: Mostrar las fechas seleccionadas
-    st.write(f"Fecha inicio: {fecha_inicio}, Fecha fin: {fecha_fin}")
-
     try:
         # Establecer conexión
         con = obtener_conexion()
@@ -30,16 +27,6 @@ def reporte_ventas():
         # Generar query interpolando las fechas directamente
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
-
-        # Depuración: Mostrar la consulta SQL
-        st.write(f"Consulta SQL: SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, "
-                 f"v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto "
-                 f"FROM VENTA v "
-                 f"JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta "
-                 f"JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto "
-                 f"JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento "
-                 f"WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}' "
-                 f"ORDER BY v.ID_Venta DESC")
 
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
