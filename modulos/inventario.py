@@ -21,11 +21,6 @@ def mostrar_inventario():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener lista de emprendimientos
-        cursor.execute("SELECT DISTINCT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
-        emprendimientos = [row[0] for row in cursor.fetchall()]
-        emprendimiento_seleccionado = st.selectbox("🔍 Filtrar por Emprendimiento (Próximos a vencer)", options=["Todos"] + emprendimientos)
-
         # 📥 Productos abastecidos
         cursor.execute("""
             SELECT e.Nombre_emprendimiento, p.Nombre_producto, i.Cantidad_ingresada, i.Fecha_ingreso
@@ -65,6 +60,14 @@ def mostrar_inventario():
         # 📅 Productos próximos a vencer
         fecha_limite = datetime.today() + timedelta(days=30)
 
+        # Obtener lista de emprendimientos desde la base
+        cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
+        lista_emprendimientos = [row[0] for row in cursor.fetchall()]
+
+        # Lista desplegable para filtrar
+        emprendimiento_seleccionado = st.selectbox("🔍 Filtrar productos por emprendimiento (Próximos a vencer)", ["Todos"] + lista_emprendimientos)
+
+        # Consulta base
         query = """
             SELECT e.Nombre_emprendimiento, p.Nombre_producto, 
                    i.Stock AS Stock_Disponible, i.Fecha_vencimiento
@@ -74,26 +77,28 @@ def mostrar_inventario():
             WHERE i.Fecha_vencimiento BETWEEN CURDATE() AND %s
               AND (i.Cantidad_ingresada - i.Cantidad_salida) > 0
         """
-
         params = [fecha_limite.date()]
+
+        # Agregar filtro si se eligió un emprendimiento específico
         if emprendimiento_seleccionado != "Todos":
             query += " AND e.Nombre_emprendimiento = %s"
             params.append(emprendimiento_seleccionado)
 
         query += " ORDER BY i.Fecha_vencimiento ASC"
+
         cursor.execute(query, params)
         productos_proximos_vencer = cursor.fetchall()
 
         if productos_proximos_vencer:
             df_proximos_vencer = pd.DataFrame(productos_proximos_vencer, columns=["Emprendimiento", "Producto", "Stock Disponible", "Fecha de Vencimiento"])
 
-            # Añadir columna de días restantes
+            # Calcular días restantes
             hoy = date.today()
             df_proximos_vencer["Días Restantes"] = df_proximos_vencer["Fecha de Vencimiento"].apply(
                 lambda x: (x - hoy).days
             )
 
-            # Añadir advertencia visual con emojis
+            # Representación visual con advertencias
             def advertencia(dias):
                 if dias <= 0:
                     return "⚠️ Vencido"
@@ -108,12 +113,12 @@ def mostrar_inventario():
 
             df_proximos_vencer["Días Restantes"] = df_proximos_vencer["Días Restantes"].apply(advertencia)
 
-            # Ordenar por vencimiento cercano
-            st.subheader("📅 Productos Próximos a Vencer (Próximos 30 días)")
+            # Mostrar tabla ordenada por vencimiento
+            st.subheader("📅 Productos Próximos a Vencer (Filtrados)")
             st.dataframe(df_proximos_vencer.sort_values("Fecha de Vencimiento"))
 
         else:
-            st.info("No hay productos próximos a vencer en los próximos 30 días.")
+            st.info("No hay productos próximos a vencer para ese filtro.")
 
     except Exception as e:
         st.error(f"❌ Error al cargar el inventario: {e}")
