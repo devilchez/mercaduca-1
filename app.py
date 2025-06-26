@@ -104,7 +104,7 @@ else:
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
     elif opcion == "Dashboard" and tipo == "Administrador":
-        dashboard(fecha_inicio, fecha_fin, None)  # Pasamos None para filtro de emprendimiento
+        dashboard()
     elif opcion == "Reporte de ventas" and tipo == "Administrador":
         reporte_ventas()
     elif opcion == "Abastecimiento" and tipo == "Administrador":
