@@ -59,7 +59,6 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# ✅ Mostrar el logo con clase correcta y ruta válida
 st.markdown(
     '<img class="logo-bottom-left" src="https://raw.githubusercontent.com/devilchez/mercaduca-1/main/img/logo.png">',
     unsafe_allow_html=True
@@ -88,30 +87,37 @@ else:
         ]
     )
 
+    # Filtros visibles solo para Dashboard
+    if opcion == "Dashboard":
+        fecha_inicio = st.sidebar.date_input("Fecha inicio", value=None)
+        fecha_fin = st.sidebar.date_input("Fecha fin", value=None)
+    else:
+        fecha_inicio = None
+        fecha_fin = None
+
     st.sidebar.markdown("<br><hr><br>", unsafe_allow_html=True)
 
     if st.sidebar.button("🔓 Cerrar sesión"):
         st.session_state.clear()
-        st.rerun()
+        st.experimental_rerun()
 
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
-    elif opcion == "Dashboard" and tipo in ["Administrador"]:
-        dashboard()
-    elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
+    elif opcion == "Dashboard" and tipo == "Administrador":
+        dashboard(fecha_inicio, fecha_fin, None)  # Pasamos None para filtro de emprendimiento
+    elif opcion == "Reporte de ventas" and tipo == "Administrador":
         reporte_ventas()
-    elif opcion == "Abastecimiento" and tipo in ["Administrador"]:
+    elif opcion == "Abastecimiento" and tipo == "Administrador":
         mostrar_abastecimiento()
-    elif opcion == "Registrar Emprendimiento" and tipo in ["Administrador"]:
+    elif opcion == "Registrar Emprendimiento" and tipo == "Administrador":
         registrar_emprendimiento()
-    elif opcion == "Gestionar Emprendimiento" and tipo in ["Administrador"]:
+    elif opcion == "Gestionar Emprendimiento" and tipo == "Administrador":
         mostrar_emprendimientos()
-    elif opcion == "Registrar Productos" and tipo in ["Administrador"]:
+    elif opcion == "Registrar Productos" and tipo == "Administrador":
         registrar_producto()
-    elif opcion == "Gestionar Productos" and tipo in ["Administrador"]:
+    elif opcion == "Gestionar Productos" and tipo == "Administrador":
         mostrar_productos()
-    elif opcion == "Inventario" and tipo in ["Administrador"]:
+    elif opcion == "Inventario" and tipo == "Administrador":
         mostrar_inventario()
-
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
