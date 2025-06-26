@@ -76,6 +76,7 @@ else:
     opcion = st.sidebar.radio(
         "Ir a:",
         [
+            "Dashboard"
             "Ventas",
             "Reporte de ventas",
             "Abastecimiento",
@@ -95,7 +96,7 @@ else:
 
     if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
         mostrar_ventas()
-    elif opcion == "Dashboard":
+    elif opcion == "Dashboard" and tipo in ["Administrador"]:
         dashboard()
     elif opcion == "Reporte de ventas" and tipo in ["Administrador"]:
         reporte_ventas()
