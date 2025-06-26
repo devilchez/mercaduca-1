@@ -73,23 +73,34 @@ def reporte_ventas():
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
                     try:
-                        # Eliminar el producto de la venta
-                        cursor.execute(
-                            f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {row['ID_Venta']} AND ID_Producto = {row['ID_Producto']}"
-                        )
+                        # Asegúrate de que el ID_Producto esté correctamente formateado (número o texto)
+                        producto_id = row['ID_Producto']
+                        venta_id = row['ID_Venta']
+                        
+                        # Verificar si el producto es un número o texto para la consulta
+                        if isinstance(producto_id, str):
+                            # Si es un texto, asegurarse de ponerlo entre comillas
+                            cursor.execute(
+                                f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = '{producto_id}'"
+                            )
+                        else:
+                            # Si es un número, no se ponen comillas
+                            cursor.execute(
+                                f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = {producto_id}"
+                            )
                         con.commit()
 
                         # Verificar si ya no hay productos en la venta
                         cursor.execute(
-                            f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {row['ID_Venta']}"
+                            f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id}"
                         )
                         count = cursor.fetchone()[0]
                         if count == 0:
                             cursor.execute(
-                                f"DELETE FROM VENTA WHERE ID_Venta = {row['ID_Venta']}"
+                                f"DELETE FROM VENTA WHERE ID_Venta = {venta_id}"
                             )
                             con.commit()
-                            st.success(f"✅ Venta ID {row['ID_Venta']} eliminada completamente.")
+                            st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
 
                         st.rerun()
 
