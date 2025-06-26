@@ -4,3 +4,4 @@ fpdf2
 xlsxwriter
 pandas
 pytz
+plotly
