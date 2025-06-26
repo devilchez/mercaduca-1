@@ -8,7 +8,7 @@ from fpdf import FPDF
 def reporte_ventas():
     st.header("📊 Reporte de Ventas por Emprendimiento")
 
-    # Filtros
+    # Filtros de fecha
     col1, col2 = st.columns(2)
     with col1:
         fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1))
@@ -19,21 +19,27 @@ def reporte_ventas():
         st.warning("⚠️ La fecha de inicio no puede ser mayor que la de fin.")
         return
 
+    # Depuración: Mostrar las fechas seleccionadas
+    st.write(f"Fecha inicio: {fecha_inicio}, Fecha fin: {fecha_fin}")
+
     try:
+        # Establecer conexión
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener lista de emprendimientos únicos
-        cursor.execute("SELECT DISTINCT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
-        emprendimientos = [row[0] for row in cursor.fetchall()]
-
-        # Agregar opción "Todos"
-        emprendimientos.insert(0, "Todos")
-        emprendimiento_seleccionado = st.selectbox("🔽 Filtrar por emprendimiento", emprendimientos)
-
-        # Construcción del query dinámico
+        # Generar query interpolando las fechas directamente
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
+
+        # Depuración: Mostrar la consulta SQL
+        st.write(f"Consulta SQL: SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, "
+                 f"v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto "
+                 f"FROM VENTA v "
+                 f"JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta "
+                 f"JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto "
+                 f"JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento "
+                 f"WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}' "
+                 f"ORDER BY v.ID_Venta DESC")
 
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
@@ -43,22 +49,18 @@ def reporte_ventas():
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}'
+            ORDER BY v.ID_Venta DESC
         """
-
-        if emprendimiento_seleccionado != "Todos":
-            query += f" AND e.Nombre_emprendimiento = '{emprendimiento_seleccionado}'"
-
-        query += " ORDER BY v.ID_Venta DESC"
 
         cursor.execute(query)
         rows = cursor.fetchall()
 
         if not rows:
-            st.info("No se encontraron ventas con los filtros seleccionados.")
+            st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
         # Crear DataFrame
-        df = pd.DataFrame(rows, columns=[
+        df = pd.DataFrame(rows, columns=[ 
             "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", 
             "Fecha Venta", "Hora Venta", "ID_Producto"
         ])
@@ -66,7 +68,7 @@ def reporte_ventas():
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
 
         st.markdown("---")
-        st.markdown("### 🖋️ Detalles de Ventas")
+        st.markdown("### 🗂 Detalles de Ventas")
 
         for index, row in df.iterrows():
             col1, col2 = st.columns([6, 1])
@@ -82,11 +84,13 @@ def reporte_ventas():
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
                     try:
+                        # Eliminar el producto de la venta
                         cursor.execute(
                             f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {row['ID_Venta']} AND ID_Producto = {row['ID_Producto']}"
                         )
                         con.commit()
 
+                        # Verificar si ya no hay productos en la venta
                         cursor.execute(
                             f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {row['ID_Venta']}"
                         )
@@ -103,7 +107,7 @@ def reporte_ventas():
                     except Exception as e:
                         st.error(f"❌ Error al eliminar el producto: {e}")
 
-        # Exportación
+        # Exportar datos
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
         col1, col2 = st.columns(2)
