@@ -76,7 +76,7 @@ else:
     opcion = st.sidebar.radio(
         "Ir a:",
         [
-            "Dashboard"
+            "Dashboard",
             "Ventas",
             "Reporte de ventas",
             "Abastecimiento",
