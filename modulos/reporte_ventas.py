@@ -70,6 +70,7 @@ def reporte_ventas():
         st.markdown("---")
         st.markdown("### 🗂 Detalles de Ventas")
 
+        # Mostrar el detalle de cada venta
         for index, row in df.iterrows():
             col1, col2 = st.columns([6, 1])
             with col1:
@@ -79,7 +80,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Hora de Venta:** {row['Hora Venta']}"
+                    f"**Hora de Venta:** {row['Hora Venta']}"  # Aquí se muestra la hora correctamente
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
