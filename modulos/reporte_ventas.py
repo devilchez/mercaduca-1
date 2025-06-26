@@ -80,6 +80,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
+                    f"**Fecha de Venta:** {row['Fecha Venta']}  \n"  # Aquí agregamos la fecha
                     f"**Hora de Venta:** {row['Hora Venta']}"  # Aquí se muestra la hora correctamente
                 )
             with col2:
@@ -135,7 +136,7 @@ def reporte_ventas():
                 texto = (
                     f"{row['Emprendimiento']} | {row['Producto']} | "
                     f"{row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | "
-                    f"Hora: {row['Hora Venta']}"
+                    f"Fecha: {row['Fecha Venta']} | Hora: {row['Hora Venta']}"  # Incluir fecha y hora en el PDF
                 )
                 pdf.cell(0, 10, txt=texto, ln=True)
 
