@@ -81,7 +81,6 @@ def reporte_ventas():
                             unsafe_allow_html=True
                         )
                     with col2:
-                        # Generamos una clave única para cada botón utilizando UUID
                         unique_key = str(uuid.uuid4())
                         if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}_{unique_key}"):
                             try:
@@ -125,7 +124,15 @@ def reporte_ventas():
                     f"**Hora Venta:** {row['Hora Venta']}"
                 )
 
-                if st.button("✏️ Editar tipo de pago", key=f"editar_pago_{row['ID_Venta']}"):
+                # Estado del formulario de edición
+                editar_key = f"mostrar_formulario_pago_{row['ID_Venta']}"
+                if editar_key not in st.session_state:
+                    st.session_state[editar_key] = False
+
+                if st.button("✏️ Editar tipo de pago", key=f"btn_editar_{row['ID_Venta']}"):
+                    st.session_state[editar_key] = not st.session_state[editar_key]
+
+                if st.session_state[editar_key]:
                     with st.form(key=f"form_editar_pago_{row['ID_Venta']}"):
                         nuevo_tipo = st.selectbox(
                             "Nuevo tipo de pago",
@@ -146,7 +153,6 @@ def reporte_ventas():
                             except Exception as e:
                                 st.error(f"❌ Error al actualizar: {e}")
 
-        # Exportar Excel y PDF
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
         nombre_archivo = "reporte_ventas"
