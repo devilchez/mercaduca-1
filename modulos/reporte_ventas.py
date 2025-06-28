@@ -28,22 +28,19 @@ def reporte_ventas():
         emprendimientos = [row[0] for row in cursor.fetchall()]
         emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
 
-        # Fechas en formato string
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
-        # Query con filtro opcional por emprendimiento
+        # Consulta con columna tipo_pago y filtro opcional
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
-                   v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
+                   v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto, v.tipo_pago
             FROM VENTA v
             JOIN PRODUCTOXVENTA pv ON v.ID_Venta = pv.ID_Venta
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}'
         """
-
-        # Si se seleccionó un emprendimiento específico
         if emprendimiento_seleccionado != "Todos":
             query += f" AND e.Nombre_emprendimiento = '{emprendimiento_seleccionado}'"
 
@@ -56,9 +53,9 @@ def reporte_ventas():
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
-        df = pd.DataFrame(rows, columns=[ 
-            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", 
-            "Fecha Venta", "Hora Venta", "ID_Producto"
+        df = pd.DataFrame(rows, columns=[
+            "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario",
+            "Fecha Venta", "Hora Venta", "ID_Producto", "Tipo Pago"
         ])
         df["Hora Venta"] = df["Hora Venta"].astype(str)
         df["Total"] = df["Cantidad"] * df["Precio Unitario"]
@@ -75,6 +72,7 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
+                    f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
                     f"**Fecha de Venta:** {row['Fecha Venta']}  \n"
                     f"**Hora de Venta:** {row['Hora Venta']}"
                 )
@@ -83,7 +81,7 @@ def reporte_ventas():
                     try:
                         producto_id = row['ID_Producto']
                         venta_id = row['ID_Venta']
-                        
+
                         if isinstance(producto_id, str):
                             cursor.execute(
                                 f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = '{producto_id}'"
@@ -99,9 +97,7 @@ def reporte_ventas():
                         )
                         count = cursor.fetchone()[0]
                         if count == 0:
-                            cursor.execute(
-                                f"DELETE FROM VENTA WHERE ID_Venta = {venta_id}"
-                            )
+                            cursor.execute(f"DELETE FROM VENTA WHERE ID_Venta = {venta_id}")
                             con.commit()
                             st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
 
@@ -113,6 +109,11 @@ def reporte_ventas():
         # Exportar datos
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
+
+        nombre_archivo = "reporte_ventas"
+        if emprendimiento_seleccionado != "Todos":
+            nombre_archivo += f"_{emprendimiento_seleccionado.replace(' ', '_')}"
+
         col1, col2 = st.columns(2)
 
         with col1:
@@ -122,7 +123,7 @@ def reporte_ventas():
             st.download_button(
                 label="⬇️ Descargar Excel",
                 data=excel_buffer.getvalue(),
-                file_name="reporte_ventas.xlsx",
+                file_name=f"{nombre_archivo}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
@@ -137,7 +138,7 @@ def reporte_ventas():
                 texto = (
                     f"{row['Emprendimiento']} | {row['Producto']} | "
                     f"{row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | "
-                    f"Fecha: {row['Fecha Venta']} | Hora: {row['Hora Venta']}"
+                    f"Pago: {row['Tipo Pago']} | Fecha: {row['Fecha Venta']} | Hora: {row['Hora Venta']}"
                 )
                 pdf.cell(0, 10, txt=texto, ln=True)
 
@@ -146,7 +147,7 @@ def reporte_ventas():
             st.download_button(
                 label="⬇️ Descargar PDF",
                 data=pdf_buffer.getvalue(),
-                file_name="reporte_ventas.pdf",
+                file_name=f"{nombre_archivo}.pdf",
                 mime="application/pdf"
             )
 
