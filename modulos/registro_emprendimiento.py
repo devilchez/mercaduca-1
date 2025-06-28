@@ -20,7 +20,7 @@ def registrar_emprendimiento():
         "Facultad de Ciencias Sociales y Humanidades",
         "Facultad de Ingeniería y Arquitectura"
     ])
-    genero = st.selectbox("Género", ["Femenino", "Masculino"])
+    genero = st.selectbox("Género", ["Femenino", "Masculino", "Otro"])
     estado = st.selectbox("Estado", ["Activo", "Inactivo"])
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"])
 
