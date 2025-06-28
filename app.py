@@ -87,13 +87,6 @@ else:
         ]
     )
 
-    # Filtros visibles solo para Dashboard
-    if opcion == "Dashboard":
-        fecha_inicio = st.sidebar.date_input("Fecha inicio", value=None)
-        fecha_fin = st.sidebar.date_input("Fecha fin", value=None)
-    else:
-        fecha_inicio = None
-        fecha_fin = None
 
     st.sidebar.markdown("<br><hr><br>", unsafe_allow_html=True)
 
