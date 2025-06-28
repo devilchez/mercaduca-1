@@ -8,7 +8,6 @@ from fpdf import FPDF
 def reporte_ventas():
     st.header("📊 Reporte de Ventas por Emprendimiento")
 
-    # Filtros de fecha
     col1, col2 = st.columns(2)
     with col1:
         fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1))
@@ -23,16 +22,14 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Obtener lista de emprendimientos
+        # Lista de emprendimientos
         cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = [row[0] for row in cursor.fetchall()]
         emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
 
-        # Fechas en formato string
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
-        # Consulta con filtro opcional y tipo_pago
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
                    v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto, v.tipo_pago
@@ -53,7 +50,6 @@ def reporte_ventas():
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
-        # Crear DataFrame
         df = pd.DataFrame(rows, columns=[
             "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario",
             "Fecha Venta", "Hora Venta", "ID_Producto", "Tipo Pago"
@@ -88,22 +84,36 @@ def reporte_ventas():
 
                             if isinstance(producto_id, str):
                                 cursor.execute(
-                                    f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = '{producto_id}'"
+                                    "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
+                                    (venta_id, producto_id)
                                 )
                             else:
                                 cursor.execute(
-                                    f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = {producto_id}"
+                                    "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
+                                    (venta_id, producto_id)
                                 )
                             con.commit()
 
+                            # Actualizar cantidad o eliminar venta
                             cursor.execute(
-                                f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id}"
+                                "SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,)
                             )
                             count = cursor.fetchone()[0]
+
                             if count == 0:
-                                cursor.execute(f"DELETE FROM VENTA WHERE ID_Venta = {venta_id}")
+                                cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
                                 con.commit()
                                 st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
+                            else:
+                                cursor.execute(
+                                    "SELECT SUM(cantidad) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,)
+                                )
+                                nueva_cantidad = cursor.fetchone()[0] or 0
+                                cursor.execute(
+                                    "UPDATE VENTA SET cantidad = %s WHERE ID_Venta = %s", (nueva_cantidad, venta_id)
+                                )
+                                con.commit()
+                                st.success("✅ Producto eliminado y cantidad total actualizada.")
 
                             st.rerun()
 
@@ -119,10 +129,9 @@ def reporte_ventas():
 
                         nuevo_tipo_pago = st.selectbox(
                             "Tipo de pago",
-                            ["Efectivo", "Woompi"],
-                            index=["Efectivo", "Woompi"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Woompi"] else 0
+                            ["Efectivo", "Tarjeta", "Transferencia", "Otro"],
+                            index=["Efectivo", "Tarjeta", "Transferencia", "Otro"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Tarjeta", "Transferencia", "Otro"] else 0
                         )
-
                         nueva_fecha = st.date_input("Fecha de venta", value=pd.to_datetime(row['Fecha Venta']))
                         nueva_hora = st.time_input("Hora de venta", value=pd.to_datetime(f"2023-01-01 {row['Hora Venta']}").time())
                         nueva_cantidad = st.number_input("Cantidad", min_value=1, value=int(row["Cantidad"]), step=1)
@@ -145,10 +154,9 @@ def reporte_ventas():
                             except Exception as e:
                                 st.error(f"❌ Error al actualizar la venta: {e}")
 
-        # Exportar datos
+        # Exportar
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
-
         nombre_archivo = "reporte_ventas"
         if emprendimiento_seleccionado != "Todos":
             nombre_archivo += f"_{emprendimiento_seleccionado.replace(' ', '_')}"
