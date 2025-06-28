@@ -71,10 +71,13 @@ def reporte_ventas():
                     col1, col2 = st.columns([6, 1])
                     with col1:
                         st.markdown(
-                            f"- **Producto:** {producto['Producto']} | "
-                            f"Cantidad: {producto['Cantidad']} | "
-                            f"Precio: ${producto['Precio Unitario']:.2f} | "
-                            f"Total: ${producto['Total']:.2f}"
+                            f"<span style='font-size: 16px;'>"
+                            f"🔹 <strong>Producto:</strong> {producto['Producto']} &nbsp; | &nbsp; "
+                            f"<strong>Cantidad:</strong> {producto['Cantidad']} &nbsp; | &nbsp; "
+                            f"<strong>Precio:</strong> ${producto['Precio Unitario']:.2f} &nbsp; | &nbsp; "
+                            f"<strong>Total:</strong> ${producto['Total']:.2f}"
+                            f"</span>",
+                            unsafe_allow_html=True
                         )
                     with col2:
                         if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}"):
@@ -88,7 +91,6 @@ def reporte_ventas():
                                 )
                                 con.commit()
 
-                                # Verificar si quedan productos en la venta
                                 cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
                                 count = cursor.fetchone()[0]
 
@@ -141,7 +143,7 @@ def reporte_ventas():
                             except Exception as e:
                                 st.error(f"❌ Error al actualizar: {e}")
 
-        # Exportar a Excel y PDF
+        # Exportar Excel y PDF
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
         nombre_archivo = "reporte_ventas"
@@ -191,4 +193,3 @@ def reporte_ventas():
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
-
