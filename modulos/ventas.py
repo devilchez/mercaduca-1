@@ -22,7 +22,7 @@ def mostrar_ventas():
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
-        productos_dict = {}  # clave: nombre, valor: (id, precio)
+        productos_dict = {}
 
         for idp, nombre, precio, id_emp in productos:
             productos_por_emprendimiento.setdefault(id_emp, []).append({
@@ -104,9 +104,12 @@ def mostrar_ventas():
                     info = productos_dict[p["producto"]]
                     subtotal += info["precio"] * p["cantidad"]
 
+                    id_emp = seccion["emprendimiento"]
+                    nombre_emp = id_a_nombre_empr.get(id_emp, "Desconocido")
+
                     productos_vender.append({
-                        "id_emprendimiento": seccion["emprendimiento"],
-                        "nombre_emprendimiento": id_a_nombre_empr.get(seccion["emprendimiento"], "Desconocido"),
+                        "id_emprendimiento": id_emp,
+                        "nombre_emprendimiento": nombre_emp,
                         "id_producto": info["id"],
                         "nombre": p["producto"],
                         "cantidad": p["cantidad"],
@@ -127,12 +130,19 @@ def mostrar_ventas():
                 st.session_state.contador_secciones += 1
                 st.rerun()
 
-        # RESUMEN DE VENTAS
+        # RESUMEN DE VENTAS (ordenado)
         if productos_vender:
             st.markdown("---")
             st.markdown("### 🧾 Resumen de productos a vender:")
-            for p in productos_vender:
+
+            productos_ordenados = sorted(
+                productos_vender,
+                key=lambda x: (x["nombre_emprendimiento"], x["nombre"])
+            )
+
+            for p in productos_ordenados:
                 st.write(f"🟩 Emprendimiento {p['nombre_emprendimiento']} (ID {p['id_emprendimiento']}) - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio_unitario']:.2f}")
+
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
             tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
