@@ -22,7 +22,7 @@ def registrar_emprendimiento():
     ])
     genero = st.selectbox("Género", ["Femenino", "Masculino"])
     estado = st.selectbox("Estado", ["Activo", "Inactivo"])
-    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Individual", "Grupo", "Corporación"])
+    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"])
 
     if st.button("Registrar"):
         if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui and facultad and genero and estado and tipo_emprendedor):
