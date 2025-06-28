@@ -86,7 +86,6 @@ def reporte_ventas():
                                 producto_id = str(producto['ID_Producto'])
                                 venta_id = int(row['ID_Venta'])
 
-                                # Obtener cantidad eliminada
                                 cursor.execute(
                                     "SELECT cantidad FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                     (venta_id, producto_id)
@@ -98,29 +97,12 @@ def reporte_ventas():
                                 else:
                                     cantidad_eliminada = resultado[0]
 
-                                    # Eliminar producto
                                     cursor.execute(
                                         "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                         (venta_id, producto_id)
                                     )
                                     con.commit()
 
-                                    # Devolver al inventario (FIFO inversa)
-                                    cursor.execute(
-                                        "SELECT ID_Inventario FROM INVENTARIO WHERE ID_Producto = %s ORDER BY Fecha_ingreso ASC",
-                                        (producto_id,)
-                                    )
-                                    inventario_result = cursor.fetchone()
-
-                                    if inventario_result:
-                                        id_inventario = inventario_result[0]
-                                        cursor.execute(
-                                            "UPDATE INVENTARIO SET Stock = Stock + %s WHERE ID_Inventario = %s",
-                                            (cantidad_eliminada, id_inventario)
-                                        )
-                                        con.commit()
-
-                                    # Eliminar la venta si ya no tiene productos
                                     cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
                                     count = cursor.fetchone()[0]
 
@@ -134,12 +116,11 @@ def reporte_ventas():
                                             (cantidad_eliminada, venta_id)
                                         )
                                         con.commit()
-                                        st.success("✅ Producto eliminado y stock devuelto.")
+                                        st.success("✅ Producto eliminado y cantidad total actualizada.")
 
                                     cursor.close()
                                     con.close()
                                     st.rerun()
-
                             except Exception as e:
                                 st.error(f"❌ Error al eliminar el producto: {e}")
 
@@ -223,7 +204,6 @@ def reporte_ventas():
 
     except Exception as e:
         st.error(f"❌ Error al generar el reporte: {e}")
-
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
