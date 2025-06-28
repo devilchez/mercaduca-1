@@ -79,8 +79,8 @@ def mostrar_inventario():
         else:
             st.info("No hay stock disponible para ese filtro.")
 
-        # ========================== 📅 Productos Próximos a Vencer ==========================
-        st.subheader("📅 Productos Próximos a Vencer (Próximos 30 días)")
+        # ========================== 📅 Productos Próximos a Vencer y Vencidos ==========================
+        st.subheader("📅 Productos Próximos a Vencer y Vencidos")
         fecha_limite = datetime.today() + timedelta(days=30)
         emprendimiento_vencer = st.selectbox("🔍 Filtrar vencimientos por emprendimiento", ["Todos"] + lista_emprendimientos)
 
@@ -90,7 +90,7 @@ def mostrar_inventario():
             FROM INVENTARIO i
             JOIN PRODUCTO p ON i.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
-            WHERE i.Fecha_vencimiento BETWEEN CURDATE() AND %s
+            WHERE (i.Fecha_vencimiento <= CURDATE() OR i.Fecha_vencimiento BETWEEN CURDATE() AND %s)
               AND (i.Cantidad_ingresada - i.Cantidad_salida) > 0
         """
         params_vencimiento = [fecha_limite.date()]
@@ -102,20 +102,20 @@ def mostrar_inventario():
         query_vencimiento += " ORDER BY i.Fecha_vencimiento ASC"
 
         cursor.execute(query_vencimiento, params_vencimiento)
-        productos_proximos_vencer = cursor.fetchall()
+        productos_vencidos_o_proximos = cursor.fetchall()
 
-        if productos_proximos_vencer:
-            df_proximos_vencer = pd.DataFrame(productos_proximos_vencer, columns=["Emprendimiento", "Producto", "Stock Disponible", "Fecha de Vencimiento"])
+        if productos_vencidos_o_proximos:
+            df_vencidos = pd.DataFrame(productos_vencidos_o_proximos, columns=["Emprendimiento", "Producto", "Stock Disponible", "Fecha de Vencimiento"])
 
             # Calcular días restantes
             hoy = date.today()
-            df_proximos_vencer["Días Restantes"] = df_proximos_vencer["Fecha de Vencimiento"].apply(
+            df_vencidos["Días Restantes"] = df_vencidos["Fecha de Vencimiento"].apply(
                 lambda x: (x - hoy).days
             )
 
             # Representación visual con advertencias
             def advertencia(dias):
-                if dias <= 0:
+                if dias < 0:
                     return "⚠️ Vencido"
                 elif dias <= 3:
                     return f"🔴 {dias} días"
@@ -126,13 +126,13 @@ def mostrar_inventario():
                 else:
                     return f"🟢 {dias} días"
 
-            df_proximos_vencer["Días Restantes"] = df_proximos_vencer["Días Restantes"].apply(advertencia)
+            df_vencidos["Estado"] = df_vencidos["Días Restantes"].apply(advertencia)
 
-            # Mostrar tabla ordenada
-            st.dataframe(df_proximos_vencer.sort_values("Fecha de Vencimiento"))
+            # Mostrar tabla con vencidos y próximos a vencer
+            st.dataframe(df_vencidos.sort_values("Fecha de Vencimiento"))
 
         else:
-            st.info("No hay productos próximos a vencer para ese filtro.")
+            st.info("No hay productos vencidos o próximos a vencer para ese filtro.")
 
     except Exception as e:
         st.error(f"❌ Error al cargar el inventario: {e}")
@@ -140,3 +140,4 @@ def mostrar_inventario():
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
+
