@@ -110,7 +110,7 @@ def reporte_ventas():
                                 )
                                 nueva_cantidad = cursor.fetchone()[0] or 0
                                 cursor.execute(
-                                    "UPDATE VENTA SET cantidad = %s WHERE ID_Venta = %s", (nueva_cantidad, venta_id)
+                                    "UPDATE VENTA SET cantidad_vendida = %s WHERE ID_Venta = %s", (nueva_cantidad, venta_id)
                                 )
                                 con.commit()
                                 st.success("✅ Producto eliminado y cantidad total actualizada.")
