@@ -138,8 +138,8 @@ def reporte_ventas():
                         if guardar:
                             try:
                                 cursor.execute(
-                                    "UPDATE VENTA SET tipo_pago = %s,
-                                    (nuevo_tipo_pago)
+                                    "UPDATE VENTA SET tipo_pago = %s WHERE ID_Venta = %s",
+                                    (nuevo_tipo_pago, row['ID_Venta'])
                                 )
 
                                 con.commit()
