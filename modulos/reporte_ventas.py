@@ -71,7 +71,7 @@ def reporte_ventas():
                     col1, col2 = st.columns([6, 1])
                     with col1:
                         st.markdown(
-                            f"<span style='font-size: 16px;'>"
+                            f"<span style='font-size:16px;'>"
                             f"🔹 <strong>Producto:</strong> {producto['Producto']} &nbsp; | &nbsp; "
                             f"<strong>Cantidad:</strong> {producto['Cantidad']} &nbsp; | &nbsp; "
                             f"<strong>Precio:</strong> ${producto['Precio Unitario']:.2f} &nbsp; | &nbsp; "
