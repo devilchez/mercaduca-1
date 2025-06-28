@@ -120,7 +120,7 @@ def reporte_ventas():
                         nuevo_tipo_pago = st.selectbox(
                             "Tipo de pago",
                             ["Efectivo", "Tarjeta", "Transferencia", "Otro"],
-                            index=["Efectivo", "Tarjeta", "Transferencia", "Otro"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Tarjeta", "Transferencia", "Otro"] else 0
+                            index=["Efectivo", "Woompi"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Woompi"] else 0
                         )
 
                         nueva_fecha = st.date_input("Fecha de venta", value=pd.to_datetime(row['Fecha Venta']))
