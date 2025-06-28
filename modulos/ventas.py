@@ -125,11 +125,12 @@ def mostrar_ventas():
 
         if productos_vender:
             st.markdown("---")
-            st.markdown("### 🧾 Resumen de productos a vender")
+            st.markdown("### 🧾 Resumen de productos a vender:")
             for p in productos_vender:
-                st.markdown(f"- **{p['nombre']}** (ID: `{p['id_producto']}`) — {p['cantidad']} x ${p['precio_unitario']:.2f} = ${p['cantidad'] * p['precio_unitario']:.2f}")
-
+                st.write(f"🟩 Emprendimiento N/D - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio_unitario']:.2f}")
+        
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
+
             tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
             if st.button("✅ Registrar venta"):
