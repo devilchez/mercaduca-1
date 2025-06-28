@@ -84,36 +84,45 @@ def reporte_ventas():
                         unique_key = str(uuid.uuid4())
                         if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}_{unique_key}"):
                             try:
-                                producto_id = producto['ID_Producto']
-                                venta_id = producto['ID_Venta']
+                                producto_id = str(producto['ID_Producto'])
+                                venta_id = int(row['ID_Venta'])
 
+                                # 1. Obtener cantidad eliminada
                                 cursor.execute(
-                                    "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
+                                    "SELECT cantidad FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                     (venta_id, producto_id)
                                 )
-                                con.commit()
+                                resultado = cursor.fetchone()
 
-                                cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
-                                count = cursor.fetchone()[0]
-
-                                if count == 0:
-                                    cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
-                                    con.commit()
-                                    st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
+                                if resultado is None:
+                                    st.warning("⚠️ No se encontró el producto para eliminar.")
                                 else:
+                                    cantidad_eliminada = resultado[0]
+
+                                    # 2. Eliminar el producto
                                     cursor.execute(
-                                        "SELECT SUM(cantidad) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,)
-                                    )
-                                    nueva_cantidad = cursor.fetchone()[0] or 0
-                                    cursor.execute(
-                                        "UPDATE VENTA SET cantidad_vendida = %s WHERE ID_Venta = %s",
-                                        (nueva_cantidad, venta_id)
+                                        "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
+                                        (venta_id, producto_id)
                                     )
                                     con.commit()
-                                    st.success("✅ Producto eliminado y cantidad total actualizada.")
 
-                                st.rerun()
+                                    # 3. Verificar si quedan productos
+                                    cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
+                                    count = cursor.fetchone()[0]
 
+                                    if count == 0:
+                                        cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
+                                        con.commit()
+                                        st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
+                                    else:
+                                        cursor.execute(
+                                            "UPDATE VENTA SET cantidad_vendida = cantidad_vendida - %s WHERE ID_Venta = %s",
+                                            (cantidad_eliminada, venta_id)
+                                        )
+                                        con.commit()
+                                        st.success("✅ Producto eliminado y cantidad total actualizada.")
+
+                                    st.rerun()
                             except Exception as e:
                                 st.error(f"❌ Error al eliminar el producto: {e}")
 
