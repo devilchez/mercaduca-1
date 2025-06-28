@@ -121,7 +121,7 @@ def mostrar_inventario():
                     return f"🔴 {dias} días"
                 elif dias <= 7:
                     return f"🟠 {dias} días"
-                elif dias <= 15:
+                elif dias <= 13:
                     return f"🟡 {dias} días"
                 else:
                     return f"🟢 {dias} días"
