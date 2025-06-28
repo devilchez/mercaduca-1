@@ -110,7 +110,7 @@ else:
         mostrar_ventas()
     elif opcion == "Dashboard" and tipo == "Administrador":
         dashboard()
-    elif opcion == "Reporte de ventas" and tipo == "Administrador":
+    elif opcion == "Reporte de ventas":
         reporte_ventas()
     elif opcion == "Abastecimiento" and tipo == "Administrador":
         mostrar_abastecimiento()
