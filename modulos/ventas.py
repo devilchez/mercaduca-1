@@ -127,7 +127,7 @@ def mostrar_ventas():
             st.markdown("---")
             st.markdown("### 🧾 Resumen de productos a vender:")
             for p in productos_vender:
-                st.write(f"🟩 Emprendimiento N/D - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio_unitario']:.2f}")
+                st.write(f"🟩 Emprendimiento {p['id_emprendimiento']}  - Producto: {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio_unitario']:.2f}")
         
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
