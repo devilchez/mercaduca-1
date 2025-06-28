@@ -28,10 +28,11 @@ def reporte_ventas():
         emprendimientos = [row[0] for row in cursor.fetchall()]
         emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
 
+        # Fechas en formato string
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
-        # Consulta con columna tipo_pago y filtro opcional
+        # Consulta con filtro opcional y tipo_pago
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
                    v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto, v.tipo_pago
@@ -43,7 +44,6 @@ def reporte_ventas():
         """
         if emprendimiento_seleccionado != "Todos":
             query += f" AND e.Nombre_emprendimiento = '{emprendimiento_seleccionado}'"
-
         query += " ORDER BY v.ID_Venta DESC"
 
         cursor.execute(query)
@@ -53,6 +53,7 @@ def reporte_ventas():
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
+        # Crear DataFrame
         df = pd.DataFrame(rows, columns=[
             "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario",
             "Fecha Venta", "Hora Venta", "ID_Producto", "Tipo Pago"
@@ -64,47 +65,85 @@ def reporte_ventas():
         st.markdown("### 🗂 Detalles de Ventas")
 
         for index, row in df.iterrows():
-            col1, col2 = st.columns([6, 1])
-            with col1:
-                st.markdown(
-                    f"**Venta ID:** {row['ID_Venta']}  \n"
-                    f"**Emprendimiento:** {row['Emprendimiento']}  \n"
-                    f"**Producto:** {row['Producto']}  \n"
-                    f"**Cantidad:** {row['Cantidad']}  \n"
-                    f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
-                    f"**Fecha de Venta:** {row['Fecha Venta']}  \n"
-                    f"**Hora de Venta:** {row['Hora Venta']}"
-                )
-            with col2:
-                if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
-                    try:
-                        producto_id = row['ID_Producto']
-                        venta_id = row['ID_Venta']
+            with st.container():
+                col1, col2, col3 = st.columns([5, 1, 1])
 
-                        if isinstance(producto_id, str):
-                            cursor.execute(
-                                f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = '{producto_id}'"
-                            )
-                        else:
-                            cursor.execute(
-                                f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = {producto_id}"
-                            )
-                        con.commit()
+                with col1:
+                    st.markdown(
+                        f"**Venta ID:** {row['ID_Venta']}  \n"
+                        f"**Emprendimiento:** {row['Emprendimiento']}  \n"
+                        f"**Producto:** {row['Producto']}  \n"
+                        f"**Cantidad:** {row['Cantidad']}  \n"
+                        f"**Total:** ${row['Total']:.2f}  \n"
+                        f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
+                        f"**Fecha de Venta:** {row['Fecha Venta']}  \n"
+                        f"**Hora de Venta:** {row['Hora Venta']}"
+                    )
 
-                        cursor.execute(
-                            f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id}"
-                        )
-                        count = cursor.fetchone()[0]
-                        if count == 0:
-                            cursor.execute(f"DELETE FROM VENTA WHERE ID_Venta = {venta_id}")
+                with col2:
+                    if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
+                        try:
+                            producto_id = row['ID_Producto']
+                            venta_id = row['ID_Venta']
+
+                            if isinstance(producto_id, str):
+                                cursor.execute(
+                                    f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = '{producto_id}'"
+                                )
+                            else:
+                                cursor.execute(
+                                    f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = {producto_id}"
+                                )
                             con.commit()
-                            st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
 
-                        st.rerun()
+                            cursor.execute(
+                                f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id}"
+                            )
+                            count = cursor.fetchone()[0]
+                            if count == 0:
+                                cursor.execute(f"DELETE FROM VENTA WHERE ID_Venta = {venta_id}")
+                                con.commit()
+                                st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
 
-                    except Exception as e:
-                        st.error(f"❌ Error al eliminar el producto: {e}")
+                            st.rerun()
+
+                        except Exception as e:
+                            st.error(f"❌ Error al eliminar el producto: {e}")
+
+                with col3:
+                    editar = st.button("✏️", key=f"editar_{row['ID_Venta']}_{index}")
+
+                if editar:
+                    with st.form(key=f"form_editar_{row['ID_Venta']}_{index}"):
+                        st.markdown("#### ✏️ Editar venta")
+
+                        nuevo_tipo_pago = st.selectbox(
+                            "Tipo de pago",
+                            ["Efectivo", "Tarjeta", "Transferencia", "Otro"],
+                            index=["Efectivo", "Tarjeta", "Transferencia", "Otro"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Tarjeta", "Transferencia", "Otro"] else 0
+                        )
+
+                        nueva_fecha = st.date_input("Fecha de venta", value=pd.to_datetime(row['Fecha Venta']))
+                        nueva_hora = st.time_input("Hora de venta", value=pd.to_datetime(f"2023-01-01 {row['Hora Venta']}").time())
+                        nueva_cantidad = st.number_input("Cantidad", min_value=1, value=int(row["Cantidad"]), step=1)
+
+                        guardar = st.form_submit_button("💾 Guardar cambios")
+
+                        if guardar:
+                            try:
+                                cursor.execute(
+                                    "UPDATE VENTA SET tipo_pago = %s, fecha_venta = %s, hora_venta = %s WHERE ID_Venta = %s",
+                                    (nuevo_tipo_pago, nueva_fecha.strftime('%Y-%m-%d'), nueva_hora.strftime('%H:%M:%S'), row['ID_Venta'])
+                                )
+                                cursor.execute(
+                                    "UPDATE PRODUCTOXVENTA SET cantidad = %s WHERE ID_Venta = %s AND ID_Producto = %s",
+                                    (nueva_cantidad, row['ID_Venta'], row['ID_Producto'])
+                                )
+                                con.commit()
+                                st.success("✅ Venta actualizada correctamente.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Error al actualizar la venta: {e}")
 
         # Exportar datos
         st.markdown("---")
