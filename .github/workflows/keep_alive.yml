@@ -11,4 +11,5 @@ jobs:
     steps:
       - name: Ping Streamlit App
         run: |
-          curl -s https://mercaduca-1-94w9kryfkqfy5gn6rwqhc8.streamlit.app/
+          curl -s https://mercaduca-1-94w9kryfkqfy5gn6rwqhc8.streamlit.app/ > /dev/null
+
