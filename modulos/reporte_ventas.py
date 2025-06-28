@@ -4,6 +4,7 @@ from modulos.config.conexion import obtener_conexion
 from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
+import uuid
 
 def reporte_ventas():
     st.header("📊 Reporte de Ventas por Emprendimiento")
@@ -80,7 +81,9 @@ def reporte_ventas():
                             unsafe_allow_html=True
                         )
                     with col2:
-                        if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}"):
+                        # Generamos una clave única para cada botón utilizando UUID
+                        unique_key = str(uuid.uuid4())
+                        if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}_{unique_key}"):
                             try:
                                 producto_id = producto['ID_Producto']
                                 venta_id = producto['ID_Venta']
