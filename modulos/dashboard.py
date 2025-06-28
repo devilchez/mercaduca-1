@@ -104,8 +104,8 @@ def dashboard():
         else:
             st.info("No hay datos de ganancias para el rango seleccionado.")
 
-        # ================== 🌍 Distribución por Tipo de Emprendedor ==================
-        st.subheader("🌍 Distribución por Tipo de Emprendedor")
+        # ================== 📚 Distribución por Tipo de Emprendedor ==================
+        st.subheader("📚 Distribución por Tipo de Emprendedor")
         cursor.execute("""
             SELECT Tipo_emprendedor, COUNT(*) AS Total
             FROM EMPRENDIMIENTO
