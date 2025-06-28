@@ -150,9 +150,6 @@ def mostrar_ventas():
                     )
                     id_venta = cursor.lastrowid
 
-                    # Mostrar la hora y fecha registrada para verificación
-                    st.write("📅 Fecha registrada:", fecha_venta)
-                    st.write("⏰ Hora registrada:", hora_venta.strftime('%I:%M %p'))  # Formato AM/PM
 
                     for p in productos_vender:
                         id_producto = p["id_producto"]
@@ -194,6 +191,9 @@ def mostrar_ventas():
                             raise Exception(f"Stock insuficiente para producto ID {id_producto}")
 
                     con.commit()
+
+                    st.write("📅 Fecha registrada:", fecha_venta)
+                    st.write("⏰ Hora registrada:", hora_venta.strftime('%I:%M %p'))  # Formato AM/PM
                     st.success(f"✅ Venta registrada correctamente con ID: {id_venta}")
                     st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
                     st.session_state.contador_secciones = 1
