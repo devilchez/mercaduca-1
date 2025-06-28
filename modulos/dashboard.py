@@ -23,31 +23,45 @@ def dashboard():
             return
 
         # Construir filtro de fecha para consultas de ventas
-        filtro_fecha = ""
-        params = (fecha_inicio, fecha_fin)
         filtro_fecha = "WHERE v.Fecha_venta BETWEEN %s AND %s"
+        params = (fecha_inicio, fecha_fin)
 
         # ================== 💵 Ventas por Emprendedor ==================
         st.subheader("📈 Ventas por Emprendedor")
-        query_ventas_emprendedor = f"""
-            SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ventas
+        cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
+        lista_emprendimientos = [row[0] for row in cursor.fetchall()]
+
+        emprendimiento_filtro = st.selectbox("Seleccionar Emprendimiento", ["Todos"] + lista_emprendimientos)
+
+        # Filtrar productos por el emprendedor seleccionado
+        query_productos = f"""
+            SELECT p.Nombre_producto, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ventas
             FROM PRODUCTOXVENTA pxv
             JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
             JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
             {filtro_fecha}
-            GROUP BY e.Nombre_emprendimiento, p.Nombre_producto
+        """
+        params_productos = (fecha_inicio, fecha_fin)
+
+        if emprendimiento_filtro != "Todos":
+            query_productos += " AND e.Nombre_emprendimiento = %s"
+            params_productos = (fecha_inicio, fecha_fin, emprendimiento_filtro)
+
+        query_productos += """
+            GROUP BY p.Nombre_producto
             ORDER BY Total_Ventas DESC
         """
-        cursor.execute(query_ventas_emprendedor, params)
-        ventas_emprendedor = cursor.fetchall()
 
-        if ventas_emprendedor:
-            df_ventas_emprendedor = pd.DataFrame(ventas_emprendedor, columns=["Emprendimiento", "Producto", "Total Ventas ($)"])
-            fig_ventas_emprendedor = px.bar(df_ventas_emprendedor, x="Emprendimiento", y="Total Ventas ($)", color="Producto", title="Ventas por Emprendedor y Producto")
-            st.plotly_chart(fig_ventas_emprendedor, use_container_width=True)
+        cursor.execute(query_productos, params_productos)
+        productos_ventas = cursor.fetchall()
+
+        if productos_ventas:
+            df_productos_ventas = pd.DataFrame(productos_ventas, columns=["Producto", "Total Ventas ($)"])
+            fig_productos_ventas = px.bar(df_productos_ventas, x="Producto", y="Total Ventas ($)", title=f"Productos Estrella de {emprendimiento_filtro}")
+            st.plotly_chart(fig_productos_ventas, use_container_width=True)
         else:
-            st.info("No se encontraron ventas por emprendedor en el rango seleccionado.")
+            st.info("No se encontraron ventas para el emprendedor seleccionado en este rango de fechas.")
 
         # ================== 🏪 Top Emprendedores por Ganancia ==================
         st.subheader("🏆 Top Emprendedores por Ganancia")
@@ -103,8 +117,8 @@ def dashboard():
 
         if ventas_mensuales:
             df_ventas = pd.DataFrame(ventas_mensuales, columns=["Mes", "Total Ventas ($)"])
-            st.subheader("📈 Ventas Mensuales")
-            fig_ventas = px.line(df_ventas, x="Mes", y="Total Ventas ($)", markers=True, title="Total vendido por mes")
+            st.subheader("📈 Ventas por Rango de Fecha")
+            fig_ventas = px.line(df_ventas, x="Mes", y="Total Ventas ($)", markers=True, title="Total vendido por rango de fechas")
             st.plotly_chart(fig_ventas, use_container_width=True)
 
             # Total mes actual (considerando filtro)
@@ -156,3 +170,4 @@ def dashboard():
             cursor.close()
         if 'con' in locals():
             con.close()
+
