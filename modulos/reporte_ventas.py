@@ -129,25 +129,19 @@ def reporte_ventas():
 
                         nuevo_tipo_pago = st.selectbox(
                             "Tipo de pago",
-                            ["Efectivo", "Tarjeta", "Transferencia", "Otro"],
-                            index=["Efectivo", "Tarjeta", "Transferencia", "Otro"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Tarjeta", "Transferencia", "Otro"] else 0
+                            ["Efectivo", "Woompi"],
+                            index=["Efectivo", "Woompi"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Woompi"] else 0
                         )
-                        nueva_fecha = st.date_input("Fecha de venta", value=pd.to_datetime(row['Fecha Venta']))
-                        nueva_hora = st.time_input("Hora de venta", value=pd.to_datetime(f"2023-01-01 {row['Hora Venta']}").time())
-                        nueva_cantidad = st.number_input("Cantidad", min_value=1, value=int(row["Cantidad"]), step=1)
 
                         guardar = st.form_submit_button("💾 Guardar cambios")
 
                         if guardar:
                             try:
                                 cursor.execute(
-                                    "UPDATE VENTA SET tipo_pago = %s, fecha_venta = %s, hora_venta = %s WHERE ID_Venta = %s",
-                                    (nuevo_tipo_pago, nueva_fecha.strftime('%Y-%m-%d'), nueva_hora.strftime('%H:%M:%S'), row['ID_Venta'])
+                                    "UPDATE VENTA SET tipo_pago = %s,
+                                    (nuevo_tipo_pago)
                                 )
-                                cursor.execute(
-                                    "UPDATE PRODUCTOXVENTA SET cantidad = %s WHERE ID_Venta = %s AND ID_Producto = %s",
-                                    (nueva_cantidad, row['ID_Venta'], row['ID_Producto'])
-                                )
+
                                 con.commit()
                                 st.success("✅ Venta actualizada correctamente.")
                                 st.rerun()
