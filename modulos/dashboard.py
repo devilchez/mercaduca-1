@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
@@ -11,7 +11,7 @@ def dashboard():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Filtro de fechas dentro del módulo
+        # ================== 📅 Filtro de Fechas ==================
         col1, col2 = st.columns(2)
         with col1:
             fecha_inicio = st.date_input("Desde", value=datetime.today().replace(day=1).date())
@@ -22,89 +22,12 @@ def dashboard():
             st.warning("⚠️ La fecha de inicio no puede ser mayor que la fecha de fin.")
             return
 
-        # Construir filtro de fecha para consultas de ventas
-        filtro_fecha = "WHERE v.Fecha_venta BETWEEN %s AND %s"
         params = (fecha_inicio, fecha_fin)
+        filtro_fecha = "WHERE v.Fecha_venta BETWEEN %s AND %s"
 
-        # ================== 💵 Ventas por Emprendedor ==================
-        st.subheader("📈 Ventas por Emprendedor")
-        cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
-        lista_emprendimientos = [row[0] for row in cursor.fetchall()]
-
-        emprendimiento_filtro = st.selectbox("Seleccionar Emprendimiento", ["Todos"] + lista_emprendimientos)
-
-        # Filtrar productos por el emprendedor seleccionado
-        query_productos = f"""
-            SELECT p.Nombre_producto, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ventas
-            FROM PRODUCTOXVENTA pxv
-            JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
-            JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
-            JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
-            {filtro_fecha}
-        """
-        params_productos = (fecha_inicio, fecha_fin)
-
-        if emprendimiento_filtro != "Todos":
-            query_productos += " AND e.Nombre_emprendimiento = %s"
-            params_productos = (fecha_inicio, fecha_fin, emprendimiento_filtro)
-
-        query_productos += """
-            GROUP BY p.Nombre_producto
-            ORDER BY Total_Ventas DESC
-        """
-
-        cursor.execute(query_productos, params_productos)
-        productos_ventas = cursor.fetchall()
-
-        if productos_ventas:
-            df_productos_ventas = pd.DataFrame(productos_ventas, columns=["Producto", "Total Ventas ($)"])
-            fig_productos_ventas = px.bar(df_productos_ventas, x="Producto", y="Total Ventas ($)", title=f"Productos Estrella de {emprendimiento_filtro}")
-            st.plotly_chart(fig_productos_ventas, use_container_width=True)
-        else:
-            st.info("No se encontraron ventas para el emprendedor seleccionado en este rango de fechas.")
-
-        # ================== 🏪 Top Emprendedores por Ganancia ==================
-        st.subheader("🏆 Top Emprendedores por Ganancia")
-        query_top_emprendedores = f"""
-            SELECT e.Nombre_emprendimiento, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ganancia
-            FROM PRODUCTOXVENTA pxv
-            JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
-            JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
-            JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
-            {filtro_fecha}
-            GROUP BY e.Nombre_emprendimiento
-            ORDER BY Total_Ganancia DESC
-        """
-        cursor.execute(query_top_emprendedores, params)
-        top_emprendedores = cursor.fetchall()
-
-        if top_emprendedores:
-            df_top_emprendedores = pd.DataFrame(top_emprendedores, columns=["Emprendimiento", "Total Ganancia ($)"])
-            fig_top_emprendedores = px.bar(df_top_emprendedores, x="Emprendimiento", y="Total Ganancia ($)", title="Top Emprendedores por Ganancia")
-            st.plotly_chart(fig_top_emprendedores, use_container_width=True)
-        else:
-            st.info("No se encontraron datos de ganancias por emprendedor.")
-
-        # ================== 📊 Distribución por Tipo de Emprendedor (Pie Chart) ==================
-        st.subheader("🗺 Distribución por Tipo de Emprendedor")
-        query_tipo_emprendedor = """
-            SELECT Tipo_emprendedor, COUNT(*) AS Total
-            FROM EMPRENDIMIENTO
-            GROUP BY Tipo_emprendedor
-        """
-        cursor.execute(query_tipo_emprendedor)
-        tipo_emprendedor_data = cursor.fetchall()
-
-        if tipo_emprendedor_data:
-            df_tipo_emprendedor = pd.DataFrame(tipo_emprendedor_data, columns=["Tipo de Emprendedor", "Cantidad"])
-            fig_tipo_emprendedor = px.pie(df_tipo_emprendedor, names="Tipo de Emprendedor", values="Cantidad", title="Distribución por Tipo de Emprendedor")
-            st.plotly_chart(fig_tipo_emprendedor, use_container_width=True)
-        else:
-            st.info("No se encontraron datos de tipos de emprendedores.")
-
-        # ================== 💵 Ventas por Mes (filtrado por fecha) ==================
+        # ================== 💵 Ventas por Rango de Fecha ==================
         query_ventas = f"""
-            SELECT DATE_FORMAT(v.Fecha_venta, '%%Y-%%m') AS Mes,
+            SELECT DATE_FORMAT(v.Fecha_venta, '%Y-%m') AS Mes,
                    SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ventas
             FROM PRODUCTOXVENTA pxv
             JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
@@ -121,45 +44,101 @@ def dashboard():
             fig_ventas = px.line(df_ventas, x="Mes", y="Total Ventas ($)", markers=True, title="Total vendido por rango de fechas")
             st.plotly_chart(fig_ventas, use_container_width=True)
 
-            # Total mes actual (considerando filtro)
-            mes_actual = datetime.today().strftime("%Y-%m")
-            total_mes = df_ventas[df_ventas["Mes"] == mes_actual]["Total Ventas ($)"].sum()
-            st.metric(label="💰 Total Vendido este Mes", value=f"${total_mes:,.2f}")
+            total_rango = df_ventas["Total Ventas ($)"].sum()
+            st.metric(label="💰 Total Vendido en el Rango", value=f"${total_rango:,.2f}")
         else:
             st.info("No hay datos de ventas en el rango seleccionado.")
-            st.metric(label="💰 Total Vendido este Mes", value="$0.00")
+            st.metric(label="💰 Total Vendido en el Rango", value="$0.00")
 
-        # ================== 🏪 Emprendimientos Activos (sin filtro) ==================
-        cursor.execute("""
-            SELECT DISTINCT p.ID_Emprendimiento
+        # ================== 📈 Productos Estrella por Emprendedor ==================
+        st.subheader("🌟 Productos Estrella por Emprendedor")
+
+        # Obtener lista de emprendimientos
+        cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
+        emprendimientos = [row[0] for row in cursor.fetchall()]
+        selected_emprendimiento = st.selectbox("Selecciona un emprendimiento", emprendimientos)
+
+        query_productos = f"""
+            SELECT e.Nombre_emprendimiento, p.Nombre_producto, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ventas
             FROM PRODUCTOXVENTA pxv
+            JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
             JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
-        """)
-        emprendimientos_activos = cursor.fetchall()
-        total_activos = len(emprendimientos_activos)
-        st.metric(label="🏪 Emprendimientos Activos", value=total_activos)
+            JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
+            {filtro_fecha} AND e.Nombre_emprendimiento = %s
+            GROUP BY p.Nombre_producto
+            ORDER BY Total_Ventas DESC
+        """
+        cursor.execute(query_productos, params + (selected_emprendimiento,))
+        productos_estrella = cursor.fetchall()
 
-        # ================== 📊 Distribución por Género ==================
+        if productos_estrella:
+            df_productos = pd.DataFrame(productos_estrella, columns=["Emprendimiento", "Producto", "Total Ventas ($)"])
+            fig_productos = px.bar(df_productos, x="Producto", y="Total Ventas ($)", title=f"Productos más vendidos - {selected_emprendimiento}")
+            st.plotly_chart(fig_productos, use_container_width=True)
+        else:
+            st.info("No hay productos vendidos por este emprendedor en el rango seleccionado.")
+
+        # ================== 🏆 Top Emprendedores por Ganancia ==================
+        st.subheader("🏆 Top Emprendedores por Ganancia")
+        query_top = f"""
+            SELECT e.Nombre_emprendimiento, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ganancia
+            FROM PRODUCTOXVENTA pxv
+            JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
+            JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
+            JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
+            {filtro_fecha}
+            GROUP BY e.Nombre_emprendimiento
+            ORDER BY Total_Ganancia DESC
+        """
+        cursor.execute(query_top, params)
+        top_emprendedores = cursor.fetchall()
+
+        if top_emprendedores:
+            df_top = pd.DataFrame(top_emprendedores, columns=["Emprendimiento", "Total Ganancia ($)"])
+            fig_top = px.bar(df_top, x="Emprendimiento", y="Total Ganancia ($)", title="Top Emprendedores por Ganancia")
+            st.plotly_chart(fig_top, use_container_width=True)
+        else:
+            st.info("No se encontraron datos de ganancias por emprendedor.")
+
+        # ================== 🧭 Distribución por Tipo de Emprendedor ==================
+        st.subheader("🗺 Distribución por Tipo de Emprendedor")
+        cursor.execute("""
+            SELECT Tipo_emprendedor, COUNT(*) AS Total
+            FROM EMPRENDIMIENTO
+            GROUP BY Tipo_emprendedor
+        """)
+        tipo_data = cursor.fetchall()
+
+        if tipo_data:
+            df_tipo = pd.DataFrame(tipo_data, columns=["Tipo de Emprendedor", "Cantidad"])
+            fig_tipo = px.pie(df_tipo, names="Tipo de Emprendedor", values="Cantidad", title="Distribución por Tipo de Emprendedor")
+            st.plotly_chart(fig_tipo, use_container_width=True)
+        else:
+            st.info("No hay datos de tipo de emprendedor.")
+
+        # ================== 👥 Emprendedores por Género ==================
+        st.subheader("👥 Emprendedores por Género")
         cursor.execute("""
             SELECT genero, COUNT(*) AS total
             FROM EMPRENDIMIENTO
             GROUP BY genero
         """)
         genero_data = cursor.fetchall()
+
         df_genero = pd.DataFrame(genero_data, columns=["Género", "Cantidad"])
-        st.subheader("👥 Emprendedores por Género")
         fig_genero = px.pie(df_genero, names="Género", values="Cantidad", title="Distribución por Género")
         st.plotly_chart(fig_genero, use_container_width=True)
 
-        # ================== 🎓 Distribución por Facultad (Pie Chart) ==================
+        # ================== 🎓 Distribución por Facultad ==================
+        st.subheader("🏫 Emprendedores por Facultad")
         cursor.execute("""
             SELECT facultad, COUNT(*) AS total
             FROM EMPRENDIMIENTO
             GROUP BY facultad
         """)
         facultad_data = cursor.fetchall()
+
         df_facultad = pd.DataFrame(facultad_data, columns=["Facultad", "Cantidad"])
-        st.subheader("🏫 Emprendedores por Facultad")
         fig_facultad = px.pie(df_facultad, names="Facultad", values="Cantidad", title="Distribución por Facultad")
         st.plotly_chart(fig_facultad, use_container_width=True)
 
@@ -170,4 +149,3 @@ def dashboard():
             cursor.close()
         if 'con' in locals():
             con.close()
-
