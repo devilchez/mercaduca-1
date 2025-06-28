@@ -97,32 +97,66 @@ def reporte_ventas():
                                 else:
                                     cantidad_eliminada = resultado[0]
 
+                                    # Revertir inventario
+                                    restante = cantidad_eliminada
+                                    cursor.execute("""
+                                        SELECT ID_Inventario, Stock, Cantidad_salida
+                                        FROM INVENTARIO
+                                        WHERE ID_Producto = %s AND Fecha_salida IS NOT NULL
+                                        ORDER BY Fecha_salida DESC
+                                    """, (producto_id,))
+                                    inventarios = cursor.fetchall()
+
+                                    for id_inv, stock_actual, salida_actual in inventarios:
+                                        if restante <= 0:
+                                            break
+                                        cantidad_revertir = min(salida_actual, restante)
+                                        nuevo_stock = stock_actual + cantidad_revertir
+                                        nueva_salida = salida_actual - cantidad_revertir
+
+                                        if nueva_salida == 0:
+                                            cursor.execute("""
+                                                UPDATE INVENTARIO
+                                                SET Stock = %s, Fecha_salida = NULL, Cantidad_salida = 0
+                                                WHERE ID_Inventario = %s
+                                            """, (nuevo_stock, id_inv))
+                                        else:
+                                            cursor.execute("""
+                                                UPDATE INVENTARIO
+                                                SET Stock = %s, Cantidad_salida = %s
+                                                WHERE ID_Inventario = %s
+                                            """, (nuevo_stock, nueva_salida, id_inv))
+
+                                        restante -= cantidad_revertir
+
+                                    # Eliminar producto de la venta
                                     cursor.execute(
                                         "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                         (venta_id, producto_id)
                                     )
-                                    con.commit()
 
+                                    # Actualizar cantidad_vendida
+                                    cursor.execute("""
+                                        UPDATE VENTA
+                                        SET cantidad_vendida = cantidad_vendida - %s
+                                        WHERE ID_Venta = %s
+                                    """, (cantidad_eliminada, venta_id))
+
+                                    # Eliminar venta si ya no tiene productos
                                     cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
                                     count = cursor.fetchone()[0]
-
                                     if count == 0:
                                         cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
-                                        con.commit()
                                         st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
                                     else:
-                                        cursor.execute(
-                                            "UPDATE VENTA SET cantidad_vendida = cantidad_vendida - %s WHERE ID_Venta = %s",
-                                            (cantidad_eliminada, venta_id)
-                                        )
-                                        con.commit()
-                                        st.success("✅ Producto eliminado y cantidad total actualizada.")
+                                        st.success("✅ Producto eliminado, inventario actualizado y cantidad total ajustada.")
 
-                                    cursor.close()
-                                    con.close()
+                                    con.commit()
                                     st.rerun()
+
                             except Exception as e:
-                                st.error(f"❌ Error al eliminar el producto: {e}")
+                                con.rollback()
+                                st.error(f"❌ Error al eliminar el producto o actualizar inventario: {e}")
 
                 st.markdown(
                     f"**Emprendimiento:** {row['Emprendimiento']}  \n"
