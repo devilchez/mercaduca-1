@@ -134,7 +134,7 @@ def mostrar_abastecimiento():
             for p in productos_abastecer:
                 st.write(f"🟩 Emprendimiento {p['id_emprendimiento']} - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio']:.2f} - Vence: {p['fecha_vencimiento']}")
 
-            if st.button("✅ Registrar abastecimiento"):
+            if st.button("✅ Registrar Re-Stock"):
                 try:
                     agrupados = {}
                     for p in productos_abastecer:
