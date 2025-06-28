@@ -1,1 +1,14 @@
+name: Keep Streamlit App Awake
 
+on:
+  schedule:
+    - cron: '0 */11 * * *'  # Cada 11 horas
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: |
+          curl -s https://mercaduca-1-94w9kryfkqfy5gn6rwqhc8.streamlit.app/
