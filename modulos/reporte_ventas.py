@@ -20,14 +20,19 @@ def reporte_ventas():
         return
 
     try:
-        # Establecer conexión
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Generar query interpolando las fechas directamente
+        # Obtener lista de emprendimientos
+        cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO")
+        emprendimientos = [row[0] for row in cursor.fetchall()]
+        emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
+
+        # Fechas en formato string
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
+        # Query con filtro opcional por emprendimiento
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
                    v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto
@@ -36,8 +41,13 @@ def reporte_ventas():
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}'
-            ORDER BY v.ID_Venta DESC
         """
+
+        # Si se seleccionó un emprendimiento específico
+        if emprendimiento_seleccionado != "Todos":
+            query += f" AND e.Nombre_emprendimiento = '{emprendimiento_seleccionado}'"
+
+        query += " ORDER BY v.ID_Venta DESC"
 
         cursor.execute(query)
         rows = cursor.fetchall()
@@ -46,7 +56,6 @@ def reporte_ventas():
             st.info("No se encontraron ventas en el rango seleccionado.")
             return
 
-        # Crear DataFrame
         df = pd.DataFrame(rows, columns=[ 
             "ID_Venta", "Emprendimiento", "Producto", "Cantidad", "Precio Unitario", 
             "Fecha Venta", "Hora Venta", "ID_Producto"
@@ -57,7 +66,6 @@ def reporte_ventas():
         st.markdown("---")
         st.markdown("### 🗂 Detalles de Ventas")
 
-        # Mostrar el detalle de cada venta
         for index, row in df.iterrows():
             col1, col2 = st.columns([6, 1])
             with col1:
@@ -67,30 +75,25 @@ def reporte_ventas():
                     f"**Producto:** {row['Producto']}  \n"
                     f"**Cantidad:** {row['Cantidad']}  \n"
                     f"**Total:** ${row['Total']:.2f}  \n"
-                    f"**Fecha de Venta:** {row['Fecha Venta']}  \n"  # Aquí agregamos la fecha
-                    f"**Hora de Venta:** {row['Hora Venta']}"  # Aquí se muestra la hora correctamente
+                    f"**Fecha de Venta:** {row['Fecha Venta']}  \n"
+                    f"**Hora de Venta:** {row['Hora Venta']}"
                 )
             with col2:
                 if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
                     try:
-                        # Asegúrate de que el ID_Producto esté correctamente formateado (número o texto)
                         producto_id = row['ID_Producto']
                         venta_id = row['ID_Venta']
                         
-                        # Verificar si el producto es un número o texto para la consulta
                         if isinstance(producto_id, str):
-                            # Si es un texto, asegurarse de ponerlo entre comillas
                             cursor.execute(
                                 f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = '{producto_id}'"
                             )
                         else:
-                            # Si es un número, no se ponen comillas
                             cursor.execute(
                                 f"DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id} AND ID_Producto = {producto_id}"
                             )
                         con.commit()
 
-                        # Verificar si ya no hay productos en la venta
                         cursor.execute(
                             f"SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = {venta_id}"
                         )
@@ -134,7 +137,7 @@ def reporte_ventas():
                 texto = (
                     f"{row['Emprendimiento']} | {row['Producto']} | "
                     f"{row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | "
-                    f"Fecha: {row['Fecha Venta']} | Hora: {row['Hora Venta']}"  # Incluir fecha y hora en el PDF
+                    f"Fecha: {row['Fecha Venta']} | Hora: {row['Hora Venta']}"
                 )
                 pdf.cell(0, 10, txt=texto, ln=True)
 
