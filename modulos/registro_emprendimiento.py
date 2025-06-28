@@ -22,9 +22,10 @@ def registrar_emprendimiento():
     ])
     genero = st.selectbox("Género", ["Femenino", "Masculino"])
     estado = st.selectbox("Estado", ["Activo", "Inactivo"])
+    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Individual", "Grupo", "Corporación"])
 
     if st.button("Registrar"):
-        if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui and facultad and genero and estado):
+        if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui and facultad and genero and estado and tipo_emprendedor):
             st.warning("⚠️ Por favor, completa todos los campos.")
         else:
             try:
@@ -35,7 +36,7 @@ def registrar_emprendimiento():
                 cursor.execute("""
                     INSERT INTO EMPRENDIMIENTO (
                         ID_Emprendimiento, Nombre_emprendimiento, Nombre_emprendedor,
-                        Telefono,, carne_uca, dui, facultad, genero, Estado
+                        Telefono, carne_uca, dui, facultad, genero, Estado, tipo_emprendedor
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
