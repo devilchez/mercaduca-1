@@ -76,7 +76,7 @@ else:
             "Dashboard",
             "Ventas",
             "Reporte de ventas",
-            "Abastecimiento",
+            "Re-Stock",
             "Registrar Emprendimiento",
             "Gestionar Emprendimiento",
             "Registrar Productos",
@@ -112,7 +112,7 @@ else:
         dashboard()
     elif opcion == "Reporte de ventas":
         reporte_ventas()
-    elif opcion == "Abastecimiento" and tipo == "Administrador":
+    elif opcion == "Re-Stock" and tipo == "Administrador":
         mostrar_abastecimiento()
     elif opcion == "Registrar Emprendimiento" and tipo == "Administrador":
         registrar_emprendimiento()
