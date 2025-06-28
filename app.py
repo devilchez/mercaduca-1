@@ -14,10 +14,9 @@ from modulos.productos import mostrar_productos
 from modulos.inventario import mostrar_inventario
 from modulos.dashboard import dashboard
 
-
 st.set_page_config(page_title="MERCADUCA", layout="centered")
 
-
+# ========== ESTILO PERSONALIZADO ==========
 st.markdown(
     """
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
@@ -44,7 +43,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 st.markdown(
     """
     <style>
@@ -52,7 +50,7 @@ st.markdown(
         position: fixed;
         bottom: 15px;
         left: 15px;
-        width: 120px;  /* Tamaño del logo */
+        width: 120px;
         z-index: 100;
     }
     </style>
@@ -64,17 +62,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-# 🔐 Control de sesión
+# ========== AUTENTICACIÓN ==========
 if "usuario" not in st.session_state or "tipo_usuario" not in st.session_state:
     login()
 else:
     tipo = st.session_state["tipo_usuario"]
 
     st.sidebar.title("Menú")
-    opcion = st.sidebar.radio(
-        "Ir a:",
-        [
+
+    # Menú según tipo de usuario
+    if tipo == "Administrador":
+        opciones_menu = [
             "Dashboard",
             "Ventas",
             "Reporte de ventas",
@@ -85,8 +83,21 @@ else:
             "Gestionar Productos",
             "Inventario",
         ]
-    )
+    elif tipo == "Asistente":
+        opciones_menu = [
+            "Ventas",
+            "Reporte de ventas"
+            "Inventario",
+        ]
+    else:
+        opciones_menu = []
 
+    # Mostrar el menú si hay opciones
+    if opciones_menu:
+        opcion = st.sidebar.radio("Ir a:", opciones_menu)
+    else:
+        st.warning("⚠️ Tu tipo de usuario no tiene módulos asignados.")
+        st.stop()
 
     st.sidebar.markdown("<br><hr><br>", unsafe_allow_html=True)
 
@@ -94,7 +105,8 @@ else:
         st.session_state.clear()
         st.rerun()
 
-    if opcion == "Ventas" and tipo in ["Asistente", "Administrador"]:
+    # === Rutas a módulos según tipo y opción seleccionada ===
+    if opcion == "Ventas":
         mostrar_ventas()
     elif opcion == "Dashboard" and tipo == "Administrador":
         dashboard()
@@ -110,7 +122,7 @@ else:
         registrar_producto()
     elif opcion == "Gestionar Productos" and tipo == "Administrador":
         mostrar_productos()
-    elif opcion == "Inventario" and tipo == "Administrador":
+    elif opcion == "Inventario":
         mostrar_inventario()
     else:
         st.warning("No tienes permiso para acceder a esta sección.")
