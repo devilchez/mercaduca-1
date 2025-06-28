@@ -27,21 +27,22 @@ def dashboard():
         params = (fecha_inicio, fecha_fin)
         filtro_fecha = "WHERE v.Fecha_venta BETWEEN %s AND %s"
 
-        # ================== 📈 Ventas por Emprendedor ==================
+        # ================== 📊 Ventas por Emprendedor ==================
         st.subheader("📊 Ventas por Emprendedor (Filtrar Productos Estrella)")
 
         # Filtro de emprendedor
         cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO ORDER BY Nombre_emprendimiento")
         lista_emprendimientos = [row[0] for row in cursor.fetchall()]
-        emprendimiento_filtro = st.selectbox("Seleccionar Emprendedor", ["Todos"] + lista_emprendimientos)
+        emprendimiento_filtro = st.selectbox("Seleccionar Emprendimiento", ["Todos"] + lista_emprendimientos)
 
         # Filtro de productos por emprendedor seleccionado
         query_productos = """
             SELECT p.Nombre_producto, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ventas
-            FROM PRODUCTOXVENTA pxv
+            FROM VENTA v
+            JOIN PRODUCTOXVENTA pxv ON pxv.ID_Venta = v.ID_Venta
             JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
-            WHERE v.Fecha_venta BETWEEN %s AND %s
+            {filtro_fecha}
         """
         params_productos = (fecha_inicio, fecha_fin)
 
@@ -68,8 +69,8 @@ def dashboard():
         st.subheader("🏆 Top Emprendedores por Ganancia")
         query_top_emprendedores = f"""
             SELECT e.Nombre_emprendimiento, SUM(pxv.cantidad * pxv.precio_unitario) AS Total_Ganancia
-            FROM PRODUCTOXVENTA pxv
-            JOIN VENTA v ON pxv.ID_Venta = v.ID_Venta
+            FROM VENTA v
+            JOIN PRODUCTOXVENTA pxv ON pxv.ID_Venta = v.ID_Venta
             JOIN PRODUCTO p ON pxv.ID_Producto = p.ID_Producto
             JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
             {filtro_fecha}
@@ -171,3 +172,4 @@ def dashboard():
             cursor.close()
         if 'con' in locals():
             con.close()
+
