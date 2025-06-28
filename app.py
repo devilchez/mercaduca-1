@@ -86,7 +86,7 @@ else:
     elif tipo == "Asistente":
         opciones_menu = [
             "Ventas",
-            "Reporte de ventas"
+            "Reporte de ventas",
             "Inventario",
         ]
     else:
