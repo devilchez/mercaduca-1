@@ -4,7 +4,6 @@ from modulos.config.conexion import obtener_conexion
 from datetime import datetime
 from io import BytesIO
 from fpdf import FPDF
-import uuid
 
 def reporte_ventas():
     st.header("📊 Reporte de Ventas por Emprendimiento")
@@ -81,13 +80,12 @@ def reporte_ventas():
                             unsafe_allow_html=True
                         )
                     with col2:
-                        unique_key = str(uuid.uuid4())
-                        if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}_{unique_key}"):
+                        key_btn = f"delete_{row['ID_Venta']}_{producto['ID_Producto']}"
+                        if st.button("🗑", key=key_btn):
                             try:
                                 producto_id = str(producto['ID_Producto'])
                                 venta_id = int(row['ID_Venta'])
 
-                                # 1. Obtener cantidad eliminada
                                 cursor.execute(
                                     "SELECT cantidad FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                     (venta_id, producto_id)
@@ -99,14 +97,12 @@ def reporte_ventas():
                                 else:
                                     cantidad_eliminada = resultado[0]
 
-                                    # 2. Eliminar el producto
                                     cursor.execute(
                                         "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                         (venta_id, producto_id)
                                     )
                                     con.commit()
 
-                                    # 3. Verificar si quedan productos
                                     cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
                                     count = cursor.fetchone()[0]
 
@@ -122,6 +118,8 @@ def reporte_ventas():
                                         con.commit()
                                         st.success("✅ Producto eliminado y cantidad total actualizada.")
 
+                                    cursor.close()
+                                    con.close()
                                     st.rerun()
                             except Exception as e:
                                 st.error(f"❌ Error al eliminar el producto: {e}")
@@ -133,7 +131,6 @@ def reporte_ventas():
                     f"**Hora Venta:** {row['Hora Venta']}"
                 )
 
-                # Estado del formulario de edición
                 editar_key = f"mostrar_formulario_pago_{row['ID_Venta']}"
                 if editar_key not in st.session_state:
                     st.session_state[editar_key] = False
@@ -207,7 +204,6 @@ def reporte_ventas():
 
     except Exception as e:
         st.error(f"❌ Error al generar el reporte: {e}")
-
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
