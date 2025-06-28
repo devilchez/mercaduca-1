@@ -119,7 +119,7 @@ def reporte_ventas():
 
                         nuevo_tipo_pago = st.selectbox(
                             "Tipo de pago",
-                            ["Efectivo", "Tarjeta", "Transferencia", "Otro"],
+                            ["Efectivo", "Woompi"],
                             index=["Efectivo", "Woompi"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Woompi"] else 0
                         )
 
