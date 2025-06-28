@@ -120,6 +120,40 @@ def dashboard():
         else:
             st.info("No se encontraron datos de tipos de emprendedores.")
 
+        # ================== 🏛️ Emprendedores por Facultad ==================
+        st.subheader("🏛️ Emprendedores por Facultad")
+        cursor.execute("""
+            SELECT Facultad, COUNT(*) AS Total
+            FROM EMPRENDIMIENTO
+            GROUP BY Facultad
+            ORDER BY Total DESC
+        """)
+        facultad_data = cursor.fetchall()
+
+        if facultad_data:
+            df_facultad = pd.DataFrame(facultad_data, columns=["Facultad", "Cantidad"])
+            fig_facultad = px.bar(df_facultad, x="Facultad", y="Cantidad", title="Cantidad de Emprendedores por Facultad")
+            st.plotly_chart(fig_facultad, use_container_width=True)
+        else:
+            st.info("No hay datos de facultades.")
+
+        # ================== 🚻 Emprendedores por Género ==================
+        st.subheader("🚻 Emprendedores por Género")
+        cursor.execute("""
+            SELECT Genero, COUNT(*) AS Total
+            FROM EMPRENDIMIENTO
+            GROUP BY Genero
+            ORDER BY Total DESC
+        """)
+        genero_data = cursor.fetchall()
+
+        if genero_data:
+            df_genero = pd.DataFrame(genero_data, columns=["Género", "Cantidad"])
+            fig_genero = px.pie(df_genero, names="Género", values="Cantidad", title="Distribución de Emprendedores por Género")
+            st.plotly_chart(fig_genero, use_container_width=True)
+        else:
+            st.info("No hay datos de género de los emprendedores.")
+
     except Exception as e:
         st.error(f"❌ Error al cargar el dashboard: {e}")
 
