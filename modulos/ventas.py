@@ -6,20 +6,14 @@ from modulos.config.conexion import obtener_conexion
 def mostrar_ventas():
     st.header("🏷️ Registrar venta")
 
-    # Estado inicial
     if "secciones" not in st.session_state:
-        st.session_state.secciones = [{
-            "id": 0,
-            "emprendimiento": None,
-            "productos": []
-        }]
+        st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
         st.session_state.contador_secciones = 1
 
     try:
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Cargar emprendimientos y productos
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
@@ -27,17 +21,17 @@ def mostrar_ventas():
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
         productos_por_emprendimiento = {}
+        productos_dict = {}  # clave: nombre, valor: (id, precio)
+
         for idp, nombre, precio, id_emp in productos:
             productos_por_emprendimiento.setdefault(id_emp, []).append({
-                "id": idp,
-                "nombre": nombre,
-                "precio": precio
+                "id": idp, "nombre": nombre, "precio": precio
             })
+            productos_dict[nombre] = {"id": idp, "precio": precio}
 
         total_general = 0
         productos_vender = []
 
-        # Mostrar secciones de emprendimientos y productos
         for seccion in st.session_state.secciones:
             sec_id = seccion["id"]
             st.markdown(f"## Emprendimiento #{sec_id + 1}")
@@ -106,14 +100,15 @@ def mostrar_ventas():
             subtotal = 0
             for p in seccion["productos"]:
                 if p["producto"]:
-                    info = next((x for x in productos_disponibles if x["nombre"] == p["producto"]), None)
-                    if info:
-                        subtotal += info["precio"] * p["cantidad"]
-                        productos_vender.append({
-                            "id_producto": info["id"],
-                            "cantidad": p["cantidad"],
-                            "precio_unitario": info["precio"]
-                        })
+                    info = productos_dict[p["producto"]]
+                    subtotal += info["precio"] * p["cantidad"]
+                    productos_vender.append({
+                        "id_producto": info["id"],
+                        "nombre": p["producto"],
+                        "cantidad": p["cantidad"],
+                        "precio_unitario": info["precio"]
+                    })
+
             total_general += subtotal
             st.markdown(f"🧮 Subtotal emprendimiento #{sec_id + 1}: **${subtotal:.2f}**")
 
@@ -130,12 +125,15 @@ def mostrar_ventas():
 
         if productos_vender:
             st.markdown("---")
+            st.markdown("### 🧾 Resumen de productos a vender")
+            for p in productos_vender:
+                st.markdown(f"- **{p['nombre']}** (ID: `{p['id_producto']}`) — {p['cantidad']} x ${p['precio_unitario']:.2f} = ${p['cantidad'] * p['precio_unitario']:.2f}")
+
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
             tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
 
             if st.button("✅ Registrar venta"):
                 try:
-                    # Obtener la hora y fecha en la zona horaria de Centroamérica
                     timezone = pytz.timezone('America/El_Salvador')
                     ahora = datetime.now(timezone)
                     fecha_venta = ahora.date()
@@ -143,13 +141,11 @@ def mostrar_ventas():
 
                     total_cantidad_vendida = sum(p["cantidad"] for p in productos_vender)
 
-                    # Registrar venta (INCLUYE hora_venta correctamente)
                     cursor.execute(
                         "INSERT INTO VENTA (fecha_venta, hora_venta, tipo_pago, cantidad_vendida) VALUES (%s, %s, %s, %s)",
                         (fecha_venta, hora_venta, tipo_pago, total_cantidad_vendida)
                     )
                     id_venta = cursor.lastrowid
-
 
                     for p in productos_vender:
                         id_producto = p["id_producto"]
@@ -162,28 +158,25 @@ def mostrar_ventas():
                         )
 
                         restante = cantidad_vendida
-
-                        # Seleccionamos los productos con Stock > 0 y la Fecha_vencimiento más cercana
                         cursor.execute(
-                            "SELECT ID_Inventario, Stock, Fecha_vencimiento FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_vencimiento ASC",
+                            "SELECT ID_Inventario, Stock FROM INVENTARIO WHERE ID_Producto = %s AND Stock > 0 ORDER BY Fecha_vencimiento ASC",
                             (id_producto,)
                         )
                         inventario = cursor.fetchall()
 
-                        for id_inventario, stock, fecha_vencimiento in inventario:
+                        for id_inv, stock in inventario:
                             if restante <= 0:
                                 break
                             if stock <= restante:
                                 cursor.execute(
                                     "UPDATE INVENTARIO SET Stock = 0, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
-                                    (ahora, stock, id_inventario)
+                                    (ahora, stock, id_inv)
                                 )
                                 restante -= stock
                             else:
-                                nuevo_stock = stock - restante
                                 cursor.execute(
                                     "UPDATE INVENTARIO SET Stock = %s, Fecha_salida = %s, Cantidad_salida = Cantidad_salida + %s WHERE ID_Inventario = %s",
-                                    (nuevo_stock, ahora, restante, id_inventario)
+                                    (stock - restante, ahora, restante, id_inv)
                                 )
                                 restante = 0
 
@@ -191,9 +184,6 @@ def mostrar_ventas():
                             raise Exception(f"Stock insuficiente para producto ID {id_producto}")
 
                     con.commit()
-
-                    st.write("📅 Fecha registrada:", fecha_venta)
-                    st.write("⏰ Hora registrada:", hora_venta.strftime('%I:%M %p'))  # Formato AM/PM
                     st.success(f"✅ Venta registrada correctamente con ID: {id_venta}")
                     st.session_state.secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
                     st.session_state.contador_secciones = 1
@@ -207,7 +197,5 @@ def mostrar_ventas():
         st.error(f"❌ Error general: {e}")
 
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'con' in locals():
-            con.close()
+        if 'cursor' in locals(): cursor.close()
+        if 'con' in locals(): con.close()
