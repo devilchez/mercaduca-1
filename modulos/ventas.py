@@ -17,6 +17,7 @@ def mostrar_ventas():
         cursor.execute("SELECT ID_Emprendimiento, Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = cursor.fetchall()
         emprend_dict = {nombre: id_emp for id_emp, nombre in emprendimientos}
+        id_a_nombre_empr = {id_emp: nombre for id_emp, nombre in emprendimientos}
 
         cursor.execute("SELECT ID_Producto, Nombre_producto, Precio, ID_Emprendimiento FROM PRODUCTO")
         productos = cursor.fetchall()
@@ -102,7 +103,10 @@ def mostrar_ventas():
                 if p["producto"]:
                     info = productos_dict[p["producto"]]
                     subtotal += info["precio"] * p["cantidad"]
+
                     productos_vender.append({
+                        "id_emprendimiento": seccion["emprendimiento"],
+                        "nombre_emprendimiento": id_a_nombre_empr.get(seccion["emprendimiento"], "Desconocido"),
                         "id_producto": info["id"],
                         "nombre": p["producto"],
                         "cantidad": p["cantidad"],
@@ -123,12 +127,12 @@ def mostrar_ventas():
                 st.session_state.contador_secciones += 1
                 st.rerun()
 
+        # RESUMEN DE VENTAS
         if productos_vender:
             st.markdown("---")
             st.markdown("### 🧾 Resumen de productos a vender:")
             for p in productos_vender:
-                st.write(f"🟩 Emprendimiento {e['id_emprendimiento']}  - Producto: {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio_unitario']:.2f}")
-        
+                st.write(f"🟩 Emprendimiento {p['nombre_emprendimiento']} (ID {p['id_emprendimiento']}) - Producto {p['id_producto']} - Cantidad: {p['cantidad']} - Precio: ${p['precio_unitario']:.2f}")
             st.markdown(f"### 💰 Total general: **${total_general:.2f}**")
 
             tipo_pago = st.selectbox("💳 Tipo de pago", ["Efectivo", "Woompi"], key="tipo_pago")
