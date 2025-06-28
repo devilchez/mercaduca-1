@@ -7,7 +7,7 @@ def mostrar_abastecimiento():
         st.warning("⚠️ Debes iniciar sesión.")
         st.stop()
 
-    st.header("📦 Registrar abastecimiento")
+    st.header("📦 Re-Stock")
 
     if "abast_secciones" not in st.session_state:
         st.session_state.abast_secciones = [{"id": 0, "emprendimiento": None, "productos": []}]
