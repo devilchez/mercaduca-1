@@ -22,7 +22,6 @@ def reporte_ventas():
         con = obtener_conexion()
         cursor = con.cursor()
 
-        # Lista de emprendimientos
         cursor.execute("SELECT Nombre_emprendimiento FROM EMPRENDIMIENTO")
         emprendimientos = [row[0] for row in cursor.fetchall()]
         emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
@@ -60,95 +59,89 @@ def reporte_ventas():
         st.markdown("---")
         st.markdown("### 🗂 Detalles de Ventas")
 
-        for index, row in df.iterrows():
+        ventas_unicas = df.drop_duplicates(subset=["ID_Venta"])
+
+        for index, row in ventas_unicas.iterrows():
+            productos_de_venta = df[df["ID_Venta"] == row["ID_Venta"]]
+
             with st.container():
-                col1, col2, col3 = st.columns([5, 1, 1])
+                st.markdown(f"### 🧾 Venta ID: {row['ID_Venta']}")
 
-                with col1:
-                    st.markdown(
-                        f"**Venta ID:** {row['ID_Venta']}  \n"
-                        f"**Emprendimiento:** {row['Emprendimiento']}  \n"
-                        f"**Producto:** {row['Producto']}  \n"
-                        f"**Cantidad:** {row['Cantidad']}  \n"
-                        f"**Total:** ${row['Total']:.2f}  \n"
-                        f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
-                        f"**Fecha de Venta:** {row['Fecha Venta']}  \n"
-                        f"**Hora de Venta:** {row['Hora Venta']}"
-                    )
+                for _, producto in productos_de_venta.iterrows():
+                    col1, col2 = st.columns([6, 1])
+                    with col1:
+                        st.markdown(
+                            f"- **Producto:** {producto['Producto']} | "
+                            f"Cantidad: {producto['Cantidad']} | "
+                            f"Precio: ${producto['Precio Unitario']:.2f} | "
+                            f"Total: ${producto['Total']:.2f}"
+                        )
+                    with col2:
+                        if st.button("🗑", key=f"delete_{row['ID_Venta']}_{producto['ID_Producto']}"):
+                            try:
+                                producto_id = producto['ID_Producto']
+                                venta_id = producto['ID_Venta']
 
-                with col2:
-                    if st.button("🗑", key=f"delete_{row['ID_Venta']}_{row['ID_Producto']}_{index}"):
-                        try:
-                            producto_id = row['ID_Producto']
-                            venta_id = row['ID_Venta']
-
-                            if isinstance(producto_id, str):
                                 cursor.execute(
                                     "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                     (venta_id, producto_id)
                                 )
-                            else:
-                                cursor.execute(
-                                    "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
-                                    (venta_id, producto_id)
-                                )
-                            con.commit()
-
-                            # Actualizar cantidad o eliminar venta
-                            cursor.execute(
-                                "SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,)
-                            )
-                            count = cursor.fetchone()[0]
-
-                            if count == 0:
-                                cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
                                 con.commit()
-                                st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
-                            else:
-                                cursor.execute(
-                                    "SELECT SUM(cantidad) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,)
-                                )
-                                nueva_cantidad = cursor.fetchone()[0] or 0
-                                cursor.execute(
-                                    "UPDATE VENTA SET cantidad_vendida = %s WHERE ID_Venta = %s", (nueva_cantidad, venta_id)
-                                )
-                                con.commit()
-                                st.success("✅ Producto eliminado y cantidad total actualizada.")
 
-                            st.rerun()
+                                # Verificar si quedan productos en la venta
+                                cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
+                                count = cursor.fetchone()[0]
 
-                        except Exception as e:
-                            st.error(f"❌ Error al eliminar el producto: {e}")
+                                if count == 0:
+                                    cursor.execute("DELETE FROM VENTA WHERE ID_Venta = %s", (venta_id,))
+                                    con.commit()
+                                    st.success(f"✅ Venta ID {venta_id} eliminada completamente.")
+                                else:
+                                    cursor.execute(
+                                        "SELECT SUM(cantidad) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,)
+                                    )
+                                    nueva_cantidad = cursor.fetchone()[0] or 0
+                                    cursor.execute(
+                                        "UPDATE VENTA SET cantidad_vendida = %s WHERE ID_Venta = %s",
+                                        (nueva_cantidad, venta_id)
+                                    )
+                                    con.commit()
+                                    st.success("✅ Producto eliminado y cantidad total actualizada.")
 
-                with col3:
-                    editar = st.button("✏️", key=f"editar_{row['ID_Venta']}_{index}")
+                                st.rerun()
 
-                if editar:
-                    with st.form(key=f"form_editar_{row['ID_Venta']}_{index}"):
-                        st.markdown("#### ✏️ Editar venta")
+                            except Exception as e:
+                                st.error(f"❌ Error al eliminar el producto: {e}")
 
-                        nuevo_tipo_pago = st.selectbox(
-                            "Tipo de pago",
+                st.markdown(
+                    f"**Emprendimiento:** {row['Emprendimiento']}  \n"
+                    f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
+                    f"**Fecha Venta:** {row['Fecha Venta']}  \n"
+                    f"**Hora Venta:** {row['Hora Venta']}"
+                )
+
+                if st.button("✏️ Editar tipo de pago", key=f"editar_pago_{row['ID_Venta']}"):
+                    with st.form(key=f"form_editar_pago_{row['ID_Venta']}"):
+                        nuevo_tipo = st.selectbox(
+                            "Nuevo tipo de pago",
                             ["Efectivo", "Woompi"],
                             index=["Efectivo", "Woompi"].index(row['Tipo Pago']) if row['Tipo Pago'] in ["Efectivo", "Woompi"] else 0
                         )
-
-                        guardar = st.form_submit_button("💾 Guardar cambios")
+                        guardar = st.form_submit_button("💾 Guardar")
 
                         if guardar:
                             try:
                                 cursor.execute(
                                     "UPDATE VENTA SET tipo_pago = %s WHERE ID_Venta = %s",
-                                    (nuevo_tipo_pago, row['ID_Venta'])
+                                    (nuevo_tipo, row["ID_Venta"])
                                 )
-
                                 con.commit()
-                                st.success("✅ Venta actualizada correctamente.")
+                                st.success("✅ Tipo de pago actualizado.")
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"❌ Error al actualizar la venta: {e}")
+                                st.error(f"❌ Error al actualizar: {e}")
 
-        # Exportar
+        # Exportar a Excel y PDF
         st.markdown("---")
         st.markdown("### 📁 Exportar ventas filtradas")
         nombre_archivo = "reporte_ventas"
@@ -198,3 +191,4 @@ def reporte_ventas():
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'con' in locals(): con.close()
+
