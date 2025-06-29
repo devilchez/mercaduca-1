@@ -8,21 +8,7 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
-    # ✅ Mostrar mensaje de éxito luego del registro y limpiar
-    if st.session_state.get("registro_exitoso", False):
-        st.success("✅ Emprendimiento registrado correctamente.")
-        
-        # Limpiar campos luego de mostrar mensaje
-        for key in [
-            "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
-            "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
-        ]:
-            if key in st.session_state:
-                del st.session_state[key]
-
-        st.session_state["registro_exitoso"] = False
-
-    # Formulario
+    # Formulario con keys
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -38,9 +24,12 @@ def registrar_emprendimiento():
     estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
 
+    # Este contenedor es clave: asegura que el mensaje quede justo debajo del botón
+    mensaje_placeholder = st.empty()
+
     if st.button("Registrar"):
         if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui):
-            st.warning("⚠️ Por favor, completa todos los campos.")
+            mensaje_placeholder.warning("⚠️ Por favor, completa todos los campos.")
         else:
             try:
                 con = obtener_conexion()
@@ -59,13 +48,17 @@ def registrar_emprendimiento():
 
                 con.commit()
 
-                # Activar bandera de éxito para próxima ejecución
+                # ✅ Guardar bandera de éxito para próxima recarga
                 st.session_state["registro_exitoso"] = True
                 st.rerun()
 
             except Exception as e:
-                st.error(f"❌ Error al registrar: {e}")
+                mensaje_placeholder.error(f"❌ Error al registrar: {e}")
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
 
+    # ✅ Mostrar mensaje de éxito justo debajo del botón, después del rerun
+    if st.session_state.get("registro_exitoso"):
+        mensaje_placeholder.success("✅ Emprendimiento registrado correctamente.")
+        st.session_state["registro_exitoso"] = False
