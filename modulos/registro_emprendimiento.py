@@ -10,19 +10,19 @@ def registrar_emprendimiento():
 
     mensaje_placeholder = st.empty()
 
-    # Si hay que limpiar el formulario, borramos las keys antes de crear inputs
-    if st.session_state.get("limpiar_formulario", False):
+    # Si hay que resetear el formulario, borramos los keys antes de crear inputs
+    if st.session_state.get("resetear_formulario", False):
         for key in [
             "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
             "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
         ]:
             if key in st.session_state:
                 del st.session_state[key]
-        st.session_state["limpiar_formulario"] = False
+        st.session_state["resetear_formulario"] = False
         st.session_state["registro_exitoso"] = True
         st.rerun()  # Forzar recarga para aplicar limpieza
 
-    # Inicializar keys si no existen (valores por defecto)
+    # Inicializar valores por defecto si no existen
     defaults = {
         "id_emprendimiento": "",
         "nombre_emprendimiento": "",
@@ -39,7 +39,7 @@ def registrar_emprendimiento():
         if key not in st.session_state:
             st.session_state[key] = val
 
-    # Crear formulario con keys
+    # Crear formulario con keys en session_state
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -50,9 +50,11 @@ def registrar_emprendimiento():
         "Facultad de Ciencias Económicas y Empresariales",
         "Facultad de Ciencias Sociales y Humanidades",
         "Facultad de Ingeniería y Arquitectura"
-    ], index=["Facultad de Ciencias Económicas y Empresariales",
-              "Facultad de Ciencias Sociales y Humanidades",
-              "Facultad de Ingeniería y Arquitectura"].index(st.session_state["facultad"]), key="facultad")
+    ], index=[
+        "Facultad de Ciencias Económicas y Empresariales",
+        "Facultad de Ciencias Sociales y Humanidades",
+        "Facultad de Ingeniería y Arquitectura"
+    ].index(st.session_state["facultad"]), key="facultad")
     genero = st.selectbox("Género", ["Femenino", "Masculino", "Otro"],
                           index=["Femenino", "Masculino", "Otro"].index(st.session_state["genero"]), key="genero")
     estado = st.selectbox("Estado", ["Activo", "Inactivo"],
@@ -82,15 +84,14 @@ def registrar_emprendimiento():
                 cursor.close()
                 con.close()
 
-                # Marcar para limpiar formulario en siguiente ejecución
-                st.session_state["limpiar_formulario"] = True
-
-                st.rerun()  # Recargar app para limpiar formulario
+                # Activar reinicio del formulario y recargar la app
+                st.session_state.resetear_formulario = True
+                st.rerun()
 
             except Exception as e:
                 mensaje_placeholder.error(f"❌ Error al registrar: {e}")
 
-    # Mostrar mensaje de éxito una sola vez
+    # Mostrar mensaje de éxito sólo una vez, justo debajo del botón
     if st.session_state.get("registro_exitoso", False):
         mensaje_placeholder.success("✅ Emprendimiento registrado correctamente.")
         st.session_state["registro_exitoso"] = False
