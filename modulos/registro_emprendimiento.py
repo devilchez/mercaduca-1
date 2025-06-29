@@ -41,7 +41,7 @@ def registrar_emprendimiento():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     id_emprendimiento, nombre_emprendimiento, nombre_emprendedor,
-                    telefono, carne_uca, dui, facultad, genero, estado
+                    telefono, carne_uca, dui, facultad, genero, estado, tipo_emprendedor
                 ))
 
                 con.commit()
