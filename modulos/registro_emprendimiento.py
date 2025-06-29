@@ -46,6 +46,7 @@ def registrar_emprendimiento():
 
                 con.commit()
                 st.success("✅ Emprendimiento registrado correctamente.")
+                st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
