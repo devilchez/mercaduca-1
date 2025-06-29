@@ -61,13 +61,14 @@ def reporte_ventas():
 
         ventas_unicas = df.drop_duplicates(subset=["ID_Venta"])
 
-        for index, row in ventas_unicas.iterrows():
+        for _, row in ventas_unicas.iterrows():
             productos_de_venta = df[df["ID_Venta"] == row["ID_Venta"]]
 
             with st.container():
                 st.markdown(f"### 🧾 Venta ID: {row['ID_Venta']}")
 
-                for _, producto in productos_de_venta.iterrows():
+                # Aquí usamos el índice del dataframe para keys únicas
+                for idx, producto in productos_de_venta.iterrows():
                     col1, col2 = st.columns([6, 1])
                     with col1:
                         st.markdown(
@@ -80,7 +81,7 @@ def reporte_ventas():
                             unsafe_allow_html=True
                         )
                     with col2:
-                        key_btn = f"delete_{row['ID_Venta']}_{producto['ID_Producto']}"
+                        key_btn = f"delete_{row['ID_Venta']}_{producto['ID_Producto']}_{idx}"
                         if st.button("🗑", key=key_btn):
                             try:
                                 producto_id = str(producto['ID_Producto'])
@@ -219,11 +220,11 @@ def reporte_ventas():
             pdf.cell(200, 10, txt="Reporte de Ventas", ln=True, align='C')
             pdf.set_font("Arial", size=10)
 
-            for index, row in df.iterrows():
+            for _, row_pdf in df.iterrows():
                 texto = (
-                    f"{row['Emprendimiento']} | {row['Producto']} | "
-                    f"{row['Cantidad']} x ${row['Precio Unitario']:.2f} = ${row['Total']:.2f} | "
-                    f"Pago: {row['Tipo Pago']} | Fecha: {row['Fecha Venta']} | Hora: {row['Hora Venta']}"
+                    f"{row_pdf['Emprendimiento']} | {row_pdf['Producto']} | "
+                    f"{row_pdf['Cantidad']} x ${row_pdf['Precio Unitario']:.2f} = ${row_pdf['Total']:.2f} | "
+                    f"Pago: {row_pdf['Tipo Pago']} | Fecha: {row_pdf['Fecha Venta']} | Hora: {row_pdf['Hora Venta']}"
                 )
                 pdf.cell(0, 10, txt=texto, ln=True)
 
