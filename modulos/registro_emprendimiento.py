@@ -8,12 +8,18 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
-    # ✅ Mostrar mensaje de éxito si está en session_state
+    # ✅ Mostrar mensaje después del rerun
     if st.session_state.get("registro_exitoso", False):
         st.success("✅ Emprendimiento registrado correctamente.")
-        st.session_state["registro_exitoso"] = False  # 🔁 Reseteamos el flag
+        # Limpiar los campos después del rerun
+        for key in [
+            "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
+            "telefono", "carne_uca", "dui"
+        ]:
+            st.session_state[key] = ""
+        st.session_state["registro_exitoso"] = False
 
-    # Formulario con claves para poder limpiarlos o acceder
+    # Formulario con keys
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -30,7 +36,7 @@ def registrar_emprendimiento():
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
 
     if st.button("Registrar"):
-        if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui and facultad and genero and estado and tipo_emprendedor):
+        if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui):
             st.warning("⚠️ Por favor, completa todos los campos.")
         else:
             try:
@@ -50,16 +56,8 @@ def registrar_emprendimiento():
 
                 con.commit()
 
-                # ✅ Guardamos el flag para mostrar el mensaje después del rerun
+                # Solo marcamos el éxito, NO limpiamos aún
                 st.session_state["registro_exitoso"] = True
-
-                # ✅ Limpiamos los campos antes del rerun
-                for key in [
-                    "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
-                    "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
-                ]:
-                    st.session_state[key] = ""
-
                 st.rerun()
 
             except Exception as e:
@@ -67,4 +65,3 @@ def registrar_emprendimiento():
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
-
