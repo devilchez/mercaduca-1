@@ -8,33 +8,38 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
-    # Inicializar keys si no existen
-    if "id_emprendimiento" not in st.session_state:
-        st.session_state["id_emprendimiento"] = ""
-    if "nombre_emprendimiento" not in st.session_state:
-        st.session_state["nombre_emprendimiento"] = ""
-    if "nombre_emprendedor" not in st.session_state:
-        st.session_state["nombre_emprendedor"] = ""
-    if "telefono" not in st.session_state:
-        st.session_state["telefono"] = ""
-    if "carne_uca" not in st.session_state:
-        st.session_state["carne_uca"] = ""
-    if "dui" not in st.session_state:
-        st.session_state["dui"] = ""
-    if "facultad" not in st.session_state:
-        st.session_state["facultad"] = "Facultad de Ciencias Económicas y Empresariales"
-    if "genero" not in st.session_state:
-        st.session_state["genero"] = "Femenino"
-    if "estado" not in st.session_state:
-        st.session_state["estado"] = "Activo"
-    if "tipo_emprendedor" not in st.session_state:
-        st.session_state["tipo_emprendedor"] = "Estudiante"
-    if "registro_exitoso" not in st.session_state:
-        st.session_state["registro_exitoso"] = False
-
     mensaje_placeholder = st.empty()
 
-    # Crear formulario con valores en session_state
+    # Si hay que limpiar el formulario, borramos las keys antes de crear inputs
+    if st.session_state.get("limpiar_formulario", False):
+        for key in [
+            "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
+            "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
+        ]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state["limpiar_formulario"] = False
+        st.session_state["registro_exitoso"] = True
+        st.rerun()  # Forzar recarga para aplicar limpieza
+
+    # Inicializar keys si no existen (valores por defecto)
+    defaults = {
+        "id_emprendimiento": "",
+        "nombre_emprendimiento": "",
+        "nombre_emprendedor": "",
+        "telefono": "",
+        "carne_uca": "",
+        "dui": "",
+        "facultad": "Facultad de Ciencias Económicas y Empresariales",
+        "genero": "Femenino",
+        "estado": "Activo",
+        "tipo_emprendedor": "Estudiante",
+    }
+    for key, val in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = val
+
+    # Crear formulario con keys
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -63,7 +68,6 @@ def registrar_emprendimiento():
             try:
                 con = obtener_conexion()
                 cursor = con.cursor()
-
                 cursor.execute("""
                     INSERT INTO EMPRENDIMIENTO (
                         ID_Emprendimiento, Nombre_emprendimiento, Nombre_emprendedor,
@@ -74,29 +78,19 @@ def registrar_emprendimiento():
                     id_emprendimiento, nombre_emprendimiento, nombre_emprendedor,
                     telefono, carne_uca, dui, facultad, genero, estado, tipo_emprendedor
                 ))
-
                 con.commit()
+                cursor.close()
+                con.close()
 
-                # Limpiar los valores en session_state para limpiar formulario sin rerun
-                st.session_state["id_emprendimiento"] = ""
-                st.session_state["nombre_emprendimiento"] = ""
-                st.session_state["nombre_emprendedor"] = ""
-                st.session_state["telefono"] = ""
-                st.session_state["carne_uca"] = ""
-                st.session_state["dui"] = ""
-                st.session_state["facultad"] = "Facultad de Ciencias Económicas y Empresariales"
-                st.session_state["genero"] = "Femenino"
-                st.session_state["estado"] = "Activo"
-                st.session_state["tipo_emprendedor"] = "Estudiante"
-                st.session_state["registro_exitoso"] = True
+                # Marcar para limpiar formulario en siguiente ejecución
+                st.session_state["limpiar_formulario"] = True
+
+                st.rerun()  # Recargar app para limpiar formulario
 
             except Exception as e:
                 mensaje_placeholder.error(f"❌ Error al registrar: {e}")
-            finally:
-                if 'cursor' in locals(): cursor.close()
-                if 'con' in locals(): con.close()
 
-    if st.session_state["registro_exitoso"]:
+    # Mostrar mensaje de éxito una sola vez
+    if st.session_state.get("registro_exitoso", False):
         mensaje_placeholder.success("✅ Emprendimiento registrado correctamente.")
         st.session_state["registro_exitoso"] = False
-
