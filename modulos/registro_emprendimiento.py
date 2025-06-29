@@ -8,6 +8,20 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
+    # ✅ Mostrar mensaje de éxito luego del registro y limpiar
+    if st.session_state.get("registro_exitoso", False):
+        st.success("✅ Emprendimiento registrado correctamente.")
+        
+        # Limpiar campos luego de mostrar mensaje
+        for key in [
+            "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
+            "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
+        ]:
+            if key in st.session_state:
+                del st.session_state[key]
+
+        st.session_state["registro_exitoso"] = False
+
     # Formulario
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
@@ -23,8 +37,6 @@ def registrar_emprendimiento():
     genero = st.selectbox("Género", ["Femenino", "Masculino", "Otro"], key="genero")
     estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
-
-    mensaje_exito = False
 
     if st.button("Registrar"):
         if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui):
@@ -46,7 +58,10 @@ def registrar_emprendimiento():
                 ))
 
                 con.commit()
-                mensaje_exito = True
+
+                # Activar bandera de éxito para próxima ejecución
+                st.session_state["registro_exitoso"] = True
+                st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
@@ -54,6 +69,3 @@ def registrar_emprendimiento():
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
 
-    # ✅ Mostrar mensaje justo después del botón
-    if mensaje_exito:
-        st.success("✅ Emprendimiento registrado correctamente.")
