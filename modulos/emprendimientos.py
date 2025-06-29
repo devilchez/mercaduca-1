@@ -21,14 +21,12 @@ def actualizar_emprendimiento(df):
             SET Nombre_emprendimiento=%s,
                 Nombre_emprendedor=%s,
                 Telefono=%s,
-                Cuenta_bancaria=%s,
                 Estado=%s
             WHERE ID_Emprendimiento=%s
         """, (
             str(row["Nombre_emprendimiento"]),
             str(row["Nombre_emprendedor"]),
             str(row["Telefono"]),
-            str(row["Cuenta_bancaria"]),
             str(row["Estado"]),
             str(row["ID_Emprendimiento"])
         ))
