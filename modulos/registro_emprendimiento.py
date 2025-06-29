@@ -8,7 +8,18 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
-    # Formulario con keys
+    # ✅ Si venimos de un registro exitoso, limpiamos el formulario ahora
+    if st.session_state.get("limpiar_formulario", False):
+        for key in [
+            "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
+            "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
+        ]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state["limpiar_formulario"] = False
+        st.session_state["registro_exitoso"] = True
+
+    # Formulario
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -24,6 +35,7 @@ def registrar_emprendimiento():
     estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
 
+    # Mensaje justo debajo del botón
     mensaje_placeholder = st.empty()
 
     if st.button("Registrar"):
@@ -47,16 +59,8 @@ def registrar_emprendimiento():
 
                 con.commit()
 
-                # ✅ Limpiar campos del formulario ANTES del rerun
-                for key in [
-                    "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
-                    "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
-                ]:
-                    if key in st.session_state:
-                        del st.session_state[key]
-
-                # Mostrar mensaje después del rerun
-                st.session_state["registro_exitoso"] = True
+                # 🧠 Indicamos que en la próxima ejecución hay que limpiar los campos
+                st.session_state["limpiar_formulario"] = True
                 st.rerun()
 
             except Exception as e:
@@ -65,6 +69,7 @@ def registrar_emprendimiento():
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
 
-    if st.session_state.get("registro_exitoso"):
+    # ✅ Mostrar mensaje justo debajo del botón después de limpiar
+    if st.session_state.get("registro_exitoso", False):
         mensaje_placeholder.success("✅ Emprendimiento registrado correctamente.")
         st.session_state["registro_exitoso"] = False
