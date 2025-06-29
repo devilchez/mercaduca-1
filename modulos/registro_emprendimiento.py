@@ -8,21 +8,26 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
+    # Mostrar mensaje después del rerun
+    if st.session_state.get("registro_exitoso"):
+        st.success("✅ Emprendimiento registrado correctamente.")
+        del st.session_state["registro_exitoso"]
+
     # Formulario
-    id_emprendimiento = st.text_input("ID del Emprendimiento")
-    nombre_emprendimiento = st.text_input("Nombre del emprendimiento")
-    nombre_emprendedor = st.text_input("Nombre del emprendedor")
-    telefono = st.text_input("Teléfono")
-    carne_uca = st.text_input("Carné UCA", max_chars=10)
-    dui = st.text_input("DUI", max_chars=9)
+    id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
+    nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
+    nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
+    telefono = st.text_input("Teléfono", key="telefono")
+    carne_uca = st.text_input("Carné UCA", max_chars=10, key="carne_uca")
+    dui = st.text_input("DUI", max_chars=9, key="dui")
     facultad = st.selectbox("Facultad", [
         "Facultad de Ciencias Económicas y Empresariales",
         "Facultad de Ciencias Sociales y Humanidades",
         "Facultad de Ingeniería y Arquitectura"
-    ])
-    genero = st.selectbox("Género", ["Femenino", "Masculino", "Otro"])
-    estado = st.selectbox("Estado", ["Activo", "Inactivo"])
-    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"])
+    ], key="facultad")
+    genero = st.selectbox("Género", ["Femenino", "Masculino", "Otro"], key="genero")
+    estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
+    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
 
     if st.button("Registrar"):
         if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui and facultad and genero and estado and tipo_emprendedor):
@@ -32,7 +37,6 @@ def registrar_emprendimiento():
                 con = obtener_conexion()
                 cursor = con.cursor()
 
-                # Insertar en EMPRENDIMIENTO
                 cursor.execute("""
                     INSERT INTO EMPRENDIMIENTO (
                         ID_Emprendimiento, Nombre_emprendimiento, Nombre_emprendedor,
@@ -45,7 +49,7 @@ def registrar_emprendimiento():
                 ))
 
                 con.commit()
-                st.success("✅ Emprendimiento registrado correctamente.")
+                st.session_state["registro_exitoso"] = True
                 st.rerun()
 
             except Exception as e:
@@ -53,4 +57,3 @@ def registrar_emprendimiento():
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
-
