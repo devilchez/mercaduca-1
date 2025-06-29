@@ -24,7 +24,6 @@ def registrar_emprendimiento():
     estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
 
-    # Este contenedor es clave: asegura que el mensaje quede justo debajo del botón
     mensaje_placeholder = st.empty()
 
     if st.button("Registrar"):
@@ -48,7 +47,15 @@ def registrar_emprendimiento():
 
                 con.commit()
 
-                # ✅ Guardar bandera de éxito para próxima recarga
+                # ✅ Limpiar campos del formulario ANTES del rerun
+                for key in [
+                    "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
+                    "telefono", "carne_uca", "dui", "facultad", "genero", "estado", "tipo_emprendedor"
+                ]:
+                    if key in st.session_state:
+                        del st.session_state[key]
+
+                # Mostrar mensaje después del rerun
                 st.session_state["registro_exitoso"] = True
                 st.rerun()
 
@@ -58,7 +65,6 @@ def registrar_emprendimiento():
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
 
-    # ✅ Mostrar mensaje de éxito justo debajo del botón, después del rerun
     if st.session_state.get("registro_exitoso"):
         mensaje_placeholder.success("✅ Emprendimiento registrado correctamente.")
         st.session_state["registro_exitoso"] = False
