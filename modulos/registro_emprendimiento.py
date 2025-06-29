@@ -8,18 +8,7 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
-    # ✅ Mostrar mensaje después del rerun
-    if st.session_state.get("registro_exitoso", False):
-        st.success("✅ Emprendimiento registrado correctamente.")
-        # Limpiar los campos después del rerun
-        for key in [
-            "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
-            "telefono", "carne_uca", "dui"
-        ]:
-            st.session_state[key] = ""
-        st.session_state["registro_exitoso"] = False
-
-    # Formulario con keys
+    # Formulario
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -34,6 +23,8 @@ def registrar_emprendimiento():
     genero = st.selectbox("Género", ["Femenino", "Masculino", "Otro"], key="genero")
     estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
+
+    mensaje_exito = False
 
     if st.button("Registrar"):
         if not (id_emprendimiento and nombre_emprendimiento and nombre_emprendedor and carne_uca and dui):
@@ -55,13 +46,14 @@ def registrar_emprendimiento():
                 ))
 
                 con.commit()
-
-                # Solo marcamos el éxito, NO limpiamos aún
-                st.session_state["registro_exitoso"] = True
-                st.rerun()
+                mensaje_exito = True
 
             except Exception as e:
                 st.error(f"❌ Error al registrar: {e}")
             finally:
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
+
+    # ✅ Mostrar mensaje justo después del botón
+    if mensaje_exito:
+        st.success("✅ Emprendimiento registrado correctamente.")
