@@ -8,7 +8,7 @@ def registrar_emprendimiento():
 
     st.header("📓 Registrar nuevo emprendimiento")
 
-    # ✅ Si venimos de un registro exitoso, limpiamos el formulario ahora
+    # Limpiar formulario antes de crear los widgets
     if st.session_state.get("limpiar_formulario", False):
         for key in [
             "id_emprendimiento", "nombre_emprendimiento", "nombre_emprendedor",
@@ -19,7 +19,7 @@ def registrar_emprendimiento():
         st.session_state["limpiar_formulario"] = False
         st.session_state["registro_exitoso"] = True
 
-    # Formulario
+    # Crear formulario con keys limpias
     id_emprendimiento = st.text_input("ID del Emprendimiento", key="id_emprendimiento")
     nombre_emprendimiento = st.text_input("Nombre del emprendimiento", key="nombre_emprendimiento")
     nombre_emprendedor = st.text_input("Nombre del emprendedor", key="nombre_emprendedor")
@@ -35,7 +35,6 @@ def registrar_emprendimiento():
     estado = st.selectbox("Estado", ["Activo", "Inactivo"], key="estado")
     tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"], key="tipo_emprendedor")
 
-    # Mensaje justo debajo del botón
     mensaje_placeholder = st.empty()
 
     if st.button("Registrar"):
@@ -59,7 +58,7 @@ def registrar_emprendimiento():
 
                 con.commit()
 
-                # 🧠 Indicamos que en la próxima ejecución hay que limpiar los campos
+                # Marcar para limpiar el formulario en la próxima ejecución
                 st.session_state["limpiar_formulario"] = True
                 st.rerun()
 
@@ -69,7 +68,7 @@ def registrar_emprendimiento():
                 if 'cursor' in locals(): cursor.close()
                 if 'con' in locals(): con.close()
 
-    # ✅ Mostrar mensaje justo debajo del botón después de limpiar
+    # Mostrar mensaje de éxito sólo una vez
     if st.session_state.get("registro_exitoso", False):
         mensaje_placeholder.success("✅ Emprendimiento registrado correctamente.")
         st.session_state["registro_exitoso"] = False
