@@ -26,13 +26,17 @@ def reporte_ventas():
         emprendimientos = [row[0] for row in cursor.fetchall()]
         emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
 
-        hora_inicio, hora_fin = st.slider("Filtrar por rango de hora de venta", 0, 23, (0, 23), step=1)
+        # Nuevos filtros
+        hora_inicio, hora_fin = st.slider(
+            "Filtrar por rango de hora de venta", 0, 23, (0, 23), step=1
+        )
         tipo_pago_opciones = ["Todos", "Efectivo", "Woompi"]
         tipo_pago_seleccionado = st.selectbox("Filtrar por Tipo de Pago", tipo_pago_opciones)
 
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
+        # Construcción del query con filtros
         query = f"""
             SELECT v.ID_Venta, e.Nombre_emprendimiento, pr.Nombre_producto, pv.cantidad, pv.precio_unitario, 
                    v.fecha_venta, DATE_FORMAT(v.hora_venta, '%H:%i:%s') AS hora_venta, pr.ID_Producto, v.tipo_pago
@@ -162,12 +166,9 @@ def reporte_ventas():
                                 st.error(f"❌ Error al eliminar el producto o actualizar inventario: {e}")
 
                 st.markdown(
-                    f"**Emprendimiento:** {row['Emprendimiento']}  
-"
-                    f"**Tipo de Pago:** {row['Tipo Pago']}  
-"
-                    f"**Fecha Venta:** {row['Fecha Venta']}  
-"
+                    f"**Emprendimiento:** {row['Emprendimiento']}  \n"
+                    f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
+                    f"**Fecha Venta:** {row['Fecha Venta']}  \n"
                     f"**Hora Venta:** {row['Hora Venta']}"
                 )
 
