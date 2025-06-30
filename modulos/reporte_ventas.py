@@ -242,7 +242,7 @@ def reporte_ventas():
                 # Detalle de productos de cada venta
                 for producto in productos_venta.itertuples():
                     texto = (
-                        f"  • {producto.Producto} | {producto.Cantidad} x ${producto._5:.2f} = ${producto.Total:.2f}"
+                        f"   {producto.Producto} | {producto.Cantidad} x ${producto._5:.2f} = ${producto.Total:.2f}"
                     )
                     pdf.cell(190, 6, txt=texto, ln=True)
         
