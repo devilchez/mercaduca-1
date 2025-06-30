@@ -221,18 +221,34 @@ def reporte_ventas():
         with col2:
             pdf = FPDF()
             pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(200, 10, txt="Reporte de Ventas", ln=True, align='C')
-            pdf.set_font("Arial", size=10)
-
-            for _, row_pdf in df.iterrows():
-                texto = (
-                    f"{row_pdf['Emprendimiento']} | {row_pdf['Producto']} | "
-                    f"{row_pdf['Cantidad']} x ${row_pdf['Precio Unitario']:.2f} = ${row_pdf['Total']:.2f} | "
-                    f"Pago: {row_pdf['Tipo Pago']} | Fecha: {row_pdf['Fecha Venta']} | Hora: {row_pdf['Hora Venta']}"
-                )
-                pdf.cell(0, 10, txt=texto, ln=True)
-
+            pdf.set_font("Arial", 'B', 14)
+            pdf.cell(190, 10, txt="Reporte de Ventas", ln=True, align='C')
+            pdf.ln(5)
+        
+            pdf.set_font("Arial", '', 10)
+        
+            # Itera sobre ventas únicas (agrupadas por ID_Venta)
+            ventas_unicas_pdf = df.drop_duplicates(subset=["ID_Venta"])
+        
+            for _, row_pdf in ventas_unicas_pdf.iterrows():
+                productos_venta = df[df["ID_Venta"] == row_pdf["ID_Venta"]]
+        
+                # Encabezado por cada venta
+                pdf.set_font("Arial", 'B', 11)
+                pdf.cell(190, 8, txt=f"🧾 Venta ID: {row_pdf['ID_Venta']} - {row_pdf['Emprendimiento']} - {row_pdf['Tipo Pago']}", ln=True)
+                pdf.set_font("Arial", '', 10)
+                pdf.cell(190, 6, txt=f"Fecha: {row_pdf['Fecha Venta']} | Hora: {row_pdf['Hora Venta']}", ln=True)
+        
+                # Detalle de productos de cada venta
+                for producto in productos_venta.itertuples():
+                    texto = (
+                        f"  • {producto.Producto} | {producto.Cantidad} x ${producto._5:.2f} = ${producto.Total:.2f}"
+                    )
+                    pdf.cell(190, 6, txt=texto, ln=True)
+        
+                pdf.ln(4)  # Espacio entre ventas
+        
+            # Buffer para descarga del PDF
             pdf_buffer = BytesIO()
             pdf.output(pdf_buffer)
             st.download_button(
