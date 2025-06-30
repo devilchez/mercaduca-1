@@ -26,6 +26,10 @@ def reporte_ventas():
         emprendimientos = [row[0] for row in cursor.fetchall()]
         emprendimiento_seleccionado = st.selectbox("Filtrar por Emprendimiento", ["Todos"] + emprendimientos)
 
+        hora_inicio, hora_fin = st.slider("Filtrar por rango de hora de venta", 0, 23, (0, 23), step=1)
+        tipo_pago_opciones = ["Todos", "Efectivo", "Woompi"]
+        tipo_pago_seleccionado = st.selectbox("Filtrar por Tipo de Pago", tipo_pago_opciones)
+
         fecha_ini_str = fecha_inicio.strftime('%Y-%m-%d')
         fecha_fin_str = fecha_fin.strftime('%Y-%m-%d')
 
@@ -37,9 +41,13 @@ def reporte_ventas():
             JOIN PRODUCTO pr ON pv.ID_Producto = pr.ID_Producto
             JOIN EMPRENDIMIENTO e ON pr.ID_Emprendimiento = e.ID_Emprendimiento
             WHERE v.fecha_venta BETWEEN '{fecha_ini_str}' AND '{fecha_fin_str}'
+              AND HOUR(v.hora_venta) BETWEEN {hora_inicio} AND {hora_fin}
         """
         if emprendimiento_seleccionado != "Todos":
             query += f" AND e.Nombre_emprendimiento = '{emprendimiento_seleccionado}'"
+        if tipo_pago_seleccionado != "Todos":
+            query += f" AND v.tipo_pago = '{tipo_pago_seleccionado}'"
+
         query += " ORDER BY v.ID_Venta DESC"
 
         cursor.execute(query)
@@ -66,8 +74,6 @@ def reporte_ventas():
 
             with st.container():
                 st.markdown(f"### 🧾 Venta ID: {row['ID_Venta']}")
-
-                # Aquí usamos el índice del dataframe para keys únicas
                 for idx, producto in productos_de_venta.iterrows():
                     col1, col2 = st.columns([6, 1])
                     with col1:
@@ -98,7 +104,6 @@ def reporte_ventas():
                                 else:
                                     cantidad_eliminada = resultado[0]
 
-                                    # Revertir inventario
                                     restante = cantidad_eliminada
                                     cursor.execute("""
                                         SELECT ID_Inventario, Stock, Cantidad_salida
@@ -130,20 +135,17 @@ def reporte_ventas():
 
                                         restante -= cantidad_revertir
 
-                                    # Eliminar producto de la venta
                                     cursor.execute(
                                         "DELETE FROM PRODUCTOXVENTA WHERE ID_Venta = %s AND ID_Producto = %s",
                                         (venta_id, producto_id)
                                     )
 
-                                    # Actualizar cantidad_vendida
                                     cursor.execute("""
                                         UPDATE VENTA
                                         SET cantidad_vendida = cantidad_vendida - %s
                                         WHERE ID_Venta = %s
                                     """, (cantidad_eliminada, venta_id))
 
-                                    # Eliminar venta si ya no tiene productos
                                     cursor.execute("SELECT COUNT(*) FROM PRODUCTOXVENTA WHERE ID_Venta = %s", (venta_id,))
                                     count = cursor.fetchone()[0]
                                     if count == 0:
@@ -160,9 +162,12 @@ def reporte_ventas():
                                 st.error(f"❌ Error al eliminar el producto o actualizar inventario: {e}")
 
                 st.markdown(
-                    f"**Emprendimiento:** {row['Emprendimiento']}  \n"
-                    f"**Tipo de Pago:** {row['Tipo Pago']}  \n"
-                    f"**Fecha Venta:** {row['Fecha Venta']}  \n"
+                    f"**Emprendimiento:** {row['Emprendimiento']}  
+"
+                    f"**Tipo de Pago:** {row['Tipo Pago']}  
+"
+                    f"**Fecha Venta:** {row['Fecha Venta']}  
+"
                     f"**Hora Venta:** {row['Hora Venta']}"
                 )
 
@@ -201,7 +206,6 @@ def reporte_ventas():
             nombre_archivo += f"_{emprendimiento_seleccionado.replace(' ', '_')}"
 
         col1, col2 = st.columns(2)
-
         with col1:
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
