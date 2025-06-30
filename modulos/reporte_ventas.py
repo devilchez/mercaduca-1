@@ -235,7 +235,7 @@ def reporte_ventas():
         
                 # Encabezado por cada venta
                 pdf.set_font("Arial", 'B', 11)
-                pdf.cell(190, 8, txt=f"🧾 Venta ID: {row_pdf['ID_Venta']} - {row_pdf['Emprendimiento']} - {row_pdf['Tipo Pago']}", ln=True)
+                pdf.cell(190, 8, txt=f" Venta ID: {row_pdf['ID_Venta']} - {row_pdf['Emprendimiento']} - {row_pdf['Tipo Pago']}", ln=True)
                 pdf.set_font("Arial", '', 10)
                 pdf.cell(190, 6, txt=f"Fecha: {row_pdf['Fecha Venta']} | Hora: {row_pdf['Hora Venta']}", ln=True)
         
