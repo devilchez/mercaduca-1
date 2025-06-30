@@ -6,7 +6,7 @@ from io import BytesIO
 from fpdf import FPDF
 
 def reporte_ventas():
-    st.header("📊 Reporte de Ventas por Emprendimiento
+    st.header("📊 Reporte de Ventas por Emprendimiento")
 
     col1, col2 = st.columns(2)
     with col1:
