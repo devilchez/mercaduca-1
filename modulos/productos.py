@@ -42,25 +42,8 @@ def actualizar_productos(df):
     else:
         st.warning("⚠️ No hubo registros actualizados. Verifica que los ID coincidan.")
 
-def eliminar_productos(ids_a_eliminar):
-    """Elimina productos por sus ID desde la base de datos."""
-    con = obtener_conexion()
-    cursor = con.cursor()
-    formato_ids = ','.join(['%s'] * len(ids_a_eliminar))
-
-    cursor.execute(f"DELETE FROM PRODUCTO WHERE ID_Producto IN ({formato_ids})", tuple(ids_a_eliminar))
-    registros_eliminados = cursor.rowcount
-
-    con.commit()
-    con.close()
-
-    if registros_eliminados > 0:
-        st.success(f"🗑️ Se eliminaron {registros_eliminados} producto(s).")
-    else:
-        st.warning("⚠️ No se eliminó ningún producto. Revisa si los ID existen.")
-
 def mostrar_productos():
-    """Muestra la tabla de PRODUCTO para edición y eliminación."""
+    """Muestra la tabla de PRODUCTO para edición."""
     st.header("📋 Productos registrados")
 
     df = obtener_productos()
@@ -80,9 +63,7 @@ def mostrar_productos():
         if nombre_seleccionado != "Todos":
             df = df[df["Nombre_producto"] == nombre_seleccionado]
 
-    # Agregar columna de eliminación
-    df["Eliminar"] = False
-
+    # Editor de tabla sin columna de eliminación
     edited_df = st.data_editor(
         df,
         num_rows="fixed",
@@ -90,19 +71,9 @@ def mostrar_productos():
         key="editor_productos"
     )
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("💾 Guardar Cambios"):
-            actualizar_productos(edited_df.drop(columns=["Eliminar"]))
-
-    with col2:
-        if st.button("🗑️ Eliminar seleccionados"):
-            productos_a_eliminar = edited_df[edited_df["Eliminar"] == True]["ID_Producto"].tolist()
-            if productos_a_eliminar:
-                eliminar_productos(productos_a_eliminar)
-            else:
-                st.info("Selecciona al menos un producto para eliminar.")
+    # Botón para guardar cambios
+    if st.button("💾 Guardar Cambios"):
+        actualizar_productos(edited_df)
 
 # Para ejecución directa
 if __name__ == "__main__":
