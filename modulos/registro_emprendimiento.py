@@ -59,7 +59,7 @@ def registrar_emprendimiento():
                           index=["Femenino", "Masculino", "Otro"].index(st.session_state["genero"]), key="genero")
     estado = st.selectbox("Estado", ["Activo", "Inactivo"],
                           index=["Activo", "Inactivo"].index(st.session_state["estado"]), key="estado")
-    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador"],
+    tipo_emprendedor = st.selectbox("Tipo de Emprendedor", ["Estudiante", "Egresado", "Colaborador", "Graduado/a UCA"],
                                     index=["Estudiante", "Egresado", "Colaborador"].index(st.session_state["tipo_emprendedor"]),
                                     key="tipo_emprendedor")
 
