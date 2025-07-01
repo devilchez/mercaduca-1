@@ -51,19 +51,19 @@ def mostrar_productos():
         st.info("No hay productos registrados.")
         return
 
-    # Filtro por nombre de producto
-    nombres_unicos = df["Nombre_producto"].dropna().unique()
-    if len(nombres_unicos) > 0:
-        nombre_seleccionado = st.selectbox(
-            "🔍 Buscar producto por nombre:",
-            options=["Todos"] + sorted(nombres_unicos.tolist()),
+    # Filtro por ID de Emprendimiento
+    emprendimientos_unicos = df["ID_Emprendimiento"].dropna().unique()
+    if len(emprendimientos_unicos) > 0:
+        emprendimiento_seleccionado = st.selectbox(
+            "🏢 Buscar producto por ID de emprendimiento:",
+            options=["Todos"] + sorted(emprendimientos_unicos.tolist()),
             index=0
         )
 
-        if nombre_seleccionado != "Todos":
-            df = df[df["Nombre_producto"] == nombre_seleccionado]
+        if emprendimiento_seleccionado != "Todos":
+            df = df[df["ID_Emprendimiento"] == emprendimiento_seleccionado]
 
-    # Editor de tabla sin columna de eliminación
+    # Editor de tabla
     edited_df = st.data_editor(
         df,
         num_rows="fixed",
@@ -78,3 +78,4 @@ def mostrar_productos():
 # Para ejecución directa
 if __name__ == "__main__":
     mostrar_productos()
+
