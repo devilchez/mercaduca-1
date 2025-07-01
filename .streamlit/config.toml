@@ -1,1 +1,6 @@
-
+[theme]
+base="dark"  # Tema oscuro
+primaryColor="#77DD77"  # Verde brillante para selección, botones, etc.
+backgroundColor="#121212"  # Fondo oscuro general
+secondaryBackgroundColor="#1a1a1a"  # Barra lateral u otros contenedores
+textColor="#ffffff"  # Texto blanco
