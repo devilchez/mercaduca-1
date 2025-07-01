@@ -3,9 +3,20 @@ import pandas as pd
 from modulos.config.conexion import obtener_conexion
 
 def obtener_productos():
-    """Obtiene todos los registros de PRODUCTO desde la base de datos."""
+    """Obtiene los productos junto con el nombre del emprendimiento."""
     con = obtener_conexion()
-    df = pd.read_sql("SELECT * FROM PRODUCTO", con)
+    df = pd.read_sql("""
+        SELECT 
+            p.ID_Producto,
+            p.Nombre_producto,
+            p.Descripcion,
+            p.Precio,
+            p.Tipo_producto,
+            p.ID_Emprendimiento,
+            e.nombre_emprendimiento
+        FROM PRODUCTO p
+        JOIN EMPRENDIMIENTO e ON p.ID_Emprendimiento = e.ID_Emprendimiento
+    """, con)
     con.close()
     return df
 
@@ -43,7 +54,7 @@ def actualizar_productos(df):
         st.warning("⚠️ No hubo registros actualizados. Verifica que los ID coincidan.")
 
 def mostrar_productos():
-    """Muestra la tabla de PRODUCTO para edición."""
+    """Muestra la tabla de PRODUCTO para edición con filtro por nombre del emprendimiento."""
     st.header("📋 Productos registrados")
 
     df = obtener_productos()
@@ -51,27 +62,26 @@ def mostrar_productos():
         st.info("No hay productos registrados.")
         return
 
-    # Filtro por ID de Emprendimiento
-    emprendimientos_unicos = df["Nombre_emprendimiento"].dropna().unique()
-    if len(emprendimientos_unicos) > 0:
-        emprendimiento_seleccionado = st.selectbox(
-            "🏢 Buscar producto por Nombre de emprendimiento:",
-            options=["Todos"] + sorted(emprendimientos_unicos.tolist()),
+    # Filtro por nombre del emprendimiento
+    nombres_emprendimientos = df["nombre_emprendimiento"].dropna().unique()
+    if len(nombres_emprendimientos) > 0:
+        seleccionado = st.selectbox(
+            "🏢 Buscar producto por nombre del emprendimiento:",
+            options=["Todos"] + sorted(nombres_emprendimientos.tolist()),
             index=0
         )
 
-        if emprendimiento_seleccionado != "Todos":
-            df = df[df["Nombre_emprendimiento"] == emprendimiento_seleccionado]
+        if seleccionado != "Todos":
+            df = df[df["nombre_emprendimiento"] == seleccionado]
 
     # Editor de tabla
     edited_df = st.data_editor(
-        df,
+        df.drop(columns=["nombre_emprendimiento"]),  # evitamos editar nombre_emprendimiento directamente
         num_rows="fixed",
         use_container_width=True,
         key="editor_productos"
     )
 
-    # Botón para guardar cambios
     if st.button("💾 Guardar Cambios"):
         actualizar_productos(edited_df)
 
