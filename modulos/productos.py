@@ -6,7 +6,6 @@ def obtener_productos():
     """Obtiene todos los registros de PRODUCTO desde la base de datos."""
     con = obtener_conexion()
     df = pd.read_sql("SELECT * FROM PRODUCTO", con)
-
     con.close()
     return df
 
@@ -23,8 +22,7 @@ def actualizar_productos(df):
                 Descripcion=%s,
                 Precio=%s,
                 Tipo_producto=%s,
-                ID_Emprendimiento=%s,
-                Fecha_entrada=%s,
+                ID_Emprendimiento=%s
             WHERE ID_Producto=%s
         """, (
             str(row["Nombre_producto"]),
@@ -34,7 +32,6 @@ def actualizar_productos(df):
             str(row["ID_Emprendimiento"]),
             str(row["ID_Producto"])
         ))
-
         registros_actualizados += cursor.rowcount
 
     con.commit()
