@@ -130,6 +130,6 @@ def mostrar_emprendimientos():
             ids_a_eliminar = edited_df[edited_df["Eliminar"] == True]["ID_Emprendimiento"].tolist()
             if ids_a_eliminar:
                 eliminar_emprendimientos(ids_a_eliminar)
-                st.experimental_rerun()  # Solo recarga si elimina
+                st.rerun()  # Solo recarga si elimina
             else:
                 st.info("Selecciona al menos un emprendimiento para eliminar.")
