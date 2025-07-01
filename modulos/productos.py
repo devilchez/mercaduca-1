@@ -52,16 +52,16 @@ def mostrar_productos():
         return
 
     # Filtro por ID de Emprendimiento
-    emprendimientos_unicos = df["ID_Emprendimiento"].dropna().unique()
+    emprendimientos_unicos = df["Nombre_emprendimiento"].dropna().unique()
     if len(emprendimientos_unicos) > 0:
         emprendimiento_seleccionado = st.selectbox(
-            "🏢 Buscar producto por ID de emprendimiento:",
+            "🏢 Buscar producto por Nombre de emprendimiento:",
             options=["Todos"] + sorted(emprendimientos_unicos.tolist()),
             index=0
         )
 
         if emprendimiento_seleccionado != "Todos":
-            df = df[df["ID_Emprendimiento"] == emprendimiento_seleccionado]
+            df = df[df["Nombre_emprendimiento"] == emprendimiento_seleccionado]
 
     # Editor de tabla
     edited_df = st.data_editor(
